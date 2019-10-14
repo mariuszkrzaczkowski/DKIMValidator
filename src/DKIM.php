@@ -181,7 +181,7 @@ abstract class DKIM
                         break;
                     case 'label_raw':
                         //Complete header including label, may contain line breaks and folding
-                        $matchedHeaders[] = $header['label'] . ' :' . $header['raw'];
+                        $matchedHeaders[] = $header['label'] . ': ' . $header['raw'];
                         break;
                     case 'array':
                         //Complete header including label, may be folded, with each line as an array element
@@ -201,7 +201,7 @@ abstract class DKIM
                         break;
                     case 'label_decoded':
                         //Label and value, unfolded and decoded; may contain UTF-8
-                        $matchedHeaders[] = $header['label'] . ': ' . $header['unfolded'];
+                        $matchedHeaders[] = $header['label'] . ': ' . $header['decoded'];
                         break;
                     default:
                         throw new DKIMException('Invalid header format requested');
@@ -245,7 +245,7 @@ abstract class DKIM
                         'unfolded'   => $currentHeaderValue,
                         'decoded'    => self::rfc2047Decode($currentHeaderValue),
                         'rawarray'   => $currentRawHeaderLines,
-                        'raw'        => implode(self::CRLF, $currentRawHeaderLines),
+                        'raw'        => implode(self::CRLF . ' ', $currentRawHeaderLines), //Refold lines
                     ];
                 }
                 $currentHeaderLabel = $matches[1];
