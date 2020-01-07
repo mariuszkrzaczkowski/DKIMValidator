@@ -50,6 +50,8 @@ class Validator extends DKIM
             $signatureToProcess = preg_replace('/\s+/', '', $signature);
             //Split into tags
             $dkimTags = explode(';', $signatureToProcess);
+            if(end($dkimTags) === '')
+                array_pop($dkimTags);
             foreach ($dkimTags as $tagIndex => $tagContent) {
                 [$tagName, $tagValue] = explode('=', trim($tagContent), 2);
                 unset($dkimTags[$tagIndex]);
