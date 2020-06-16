@@ -19,16 +19,20 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-    "php": ">=7.2.0",
+    "php": ">=7.3.0",
     "ext-openssl": "*",
     "ext-hash": "*",
     "ext-mbstring": "*"
   },
   "require-dev": {
-    "nunomaduro/phpinsights": "^v1.9.0",
-    "phpunit/phpunit": "8.4.1",
-    "friendsofphp/php-cs-fixer": "^2.15",
-    "roave/security-advisories": "dev-master"
+    "roave/security-advisories": "dev-master",
+    "vimeo/psalm": "^3.11",
+    "squizlabs/php_codesniffer": "^3.5",
+    "phpcompatibility/php-compatibility": "^9.3",
+    "nunomaduro/phpinsights": "dev-master",
+    "phpunit/phpunit": "^9.1",
+    "pestphp/pest": "^0.1.5",
+    "phpstan/phpstan": "^0.12.25"
   },
   "autoload": {
     "psr-4": {
@@ -36,17 +40,14 @@
     }
   },
   "scripts": {
-    "lint": "php-cs-fixer fix -v",
-    "beautify": "phpcbf --standard=PSR12 src/*",
-    "test:lint": "php-cs-fixer fix -v --dry-run src/",
     "test:insights": "phpinsights analyse --min-quality=100 src/",
-    "test:unit": "phpunit",
+    "test:unit": "./vendor/bin/pest",
     "test:types": "phpstan analyse src/",
     "test": [
-      "@test:lint",
       "@test:insights",
       "@test:unit",
       "@test:types"
-    ]
+    ],
+    "psalm": "./vendor/bin/psalm --show-info=true"
   }
 }

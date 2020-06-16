@@ -1,6 +1,6 @@
 # PHP DKIM Validator
 
-A straightforward validation class for checking DKIM signatures and header settings. Requires PHP 7.2 or later.
+A straightforward validation class for checking DKIM signatures and header settings. Requires PHP 7.3 or later.
 
 Looking to *send* DKIM-signed email? Check out [PHPMailer](https://github.com/PHPMailer/PHPMailer)!
 
@@ -31,6 +31,8 @@ try {
     echo $e->getMessage();
 }
 ```
+
+Good article on [problems facing DKIM](https://noxxi.de/research/breaking-dkim-on-purpose-and-by-chance.html).
 
 # Changelog
 

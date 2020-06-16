@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-return [
+use ObjectCalisthenics\Sniffs\Metrics\MaxNestingLevelSniff;
 
+return [
     /*
     |--------------------------------------------------------------------------
     | Default Preset
@@ -34,7 +35,6 @@ return [
         //  'path/to/directory-or-file'
     ],
 
-
     'add' => [
         //  ExampleMetric::class => [
         //      ExampleInsight::class,
@@ -46,9 +46,8 @@ return [
     ],
 
     'config' => [
-        \ObjectCalisthenics\Sniffs\Metrics\MaxNestingLevelSniff::class => [
+        MaxNestingLevelSniff::class => [
             'maxNestingLevel' => 3,
         ],
     ],
-
 ];
