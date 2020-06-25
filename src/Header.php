@@ -23,7 +23,7 @@ class Header
     /**
      * @var string The header label
      */
-    private $name;
+    private $label;
     /**
      * @var string The raw
      */
@@ -32,7 +32,7 @@ class Header
     /**
      * Header constructor.
      *
-     * @param string $header A complete single header including line breaks and any FWS
+     * @param string $header A complete *single* header including line breaks and any FWS
      *
      * @throws HeaderException
      */
@@ -46,21 +46,21 @@ class Header
         $matches = [];
         foreach ($headerLines as $headerLine) {
             if (preg_match('/^([^ \t]*?)[ \t]*(?::[ \t]*)(.*)$/', $headerLine, $matches)) {
-                //This is a line that does not start with FWS, so it's the start of a new header
+                //This line does not start with FWS, so it's the start of a new header
                 $currentHeaderLabel = $matches[1];
-                $currentHeaderValue = $matches[2];
+                $currentHeaderValue = $matches[2] . self::CRLF;
             } elseif (preg_match('/^[ \t]+(.*)$/', $headerLine, $matches)) {
                 //This line starts with FWS, so it should be a folded continuation of the current header
                 if ($headerLineIndex === 0) {
                     throw new HeaderException('Invalid header starting with a folded line');
                 }
 
-                $currentHeaderValue .= $matches[1];
+                $currentHeaderValue .= self::FWS . $matches[1] . self::CRLF;
             }
             ++$headerLineIndex;
         }
-        $this->name = $currentHeaderLabel;
-        $this->value = $currentHeaderValue;
+        $this->label = $currentHeaderLabel;
+        $this->value = rtrim($currentHeaderValue, "\r\n");
     }
 
     /**
@@ -68,23 +68,34 @@ class Header
      *
      * @return string
      */
-    public function getName(): string
+    public function getLabel(): string
     {
-        return $this->name;
+        return $this->label;
     }
 
     /**
-     * Get the header value including unfolding.
+     * Get the header label in lower case.
      *
      * @return string
      */
-    public function getValue(): string
+    public function getLowerLabel(): string
+    {
+        return strtolower($this->label);
+    }
+
+    /**
+     * Get the raw header value.
+     *
+     * @return string
+     */
+    public function getRawValue(): string
     {
         return $this->value;
     }
 
     /**
      * Return the the header value with any RFC2047 encoding removed.
+     * Note that decoding should be applied *before* unfolding
      *
      * @return string
      */
@@ -107,35 +118,37 @@ class Header
      */
     public function getRelaxedCanonicalizedHeader(): string
     {
-        //Lowercase and trim header name
-        $name = trim($this->getLowerLabel());
+        //Lowercase and trim header label
+        $label = trim($this->getLowerLabel());
 
         //Unfold, collapse whitespace to a single space, and trim
-        $val = trim((string) preg_replace('/\s+/', self::FWS, $this->getUnfoldedValue()), " \r\n\t");
+        $val = trim((string) preg_replace('/\s+/', self::FWS, $this->getValue()), " \r\n\t");
 
         //Stick it back together including a trailing break, note no space before or after the `:`
-        return "${name}:${val}" . self::CRLF;
+        return "${label}:${val}" . self::CRLF;
     }
 
     /**
-     * Get the header label in lower case.
+     * Get the value of a header, fully decoded and unfolded.
      *
      * @return string
      */
-    public function getLowerLabel(): string
+    public function getValue(): string
     {
-        return strtolower($this->name);
+        //Unfold header value after decoding it
+        return preg_replace('/\r\n[ \t]+/', self::FWS, $this->getDecodedValue());
     }
 
     /**
-     * Unfold a header value, replacing line breaks and FWS with a single space.
+     * Get a header value unfolded and decoded with all spaces removed.
+     * Used by some special-case headers like DKIM-Signature that don't want unfolded FWS preserved
      *
      * @return string
      */
-    public function getUnfoldedValue(): string
+    public function getValueWithoutSpaces(): string
     {
         //Unfold header value
-        return preg_replace('/\r\n[ \t]+/', self::FWS, $this->value);
+        return preg_replace('/[ \t]+/', '', $this->getValue());
     }
 
     /**
