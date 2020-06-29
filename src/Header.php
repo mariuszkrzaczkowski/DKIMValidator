@@ -84,7 +84,7 @@ class Header
     }
 
     /**
-     * Get the raw header value.
+     * Get the raw header value (not including the label).
      *
      * @return string
      */
