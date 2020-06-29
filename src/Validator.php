@@ -669,14 +669,15 @@ class Validator
      */
     public static function extractDKIMTags(Header $header): array
     {
-        $dkimTags = explode(';', preg_replace('/\s+/', '', $header->getValue()));
+        $dkimTags = [];
+        //DKIM-Signature headers ignore all internal spaces, which may have been added by folding
+        $tagParts = explode(';', $header->getValueWithoutSpaces());
         //Drop an empty last element caused by a (valid) trailing semi-colon
-        if (end($dkimTags) === '') {
-            array_pop($dkimTags);
+        if (end($tagParts) === '') {
+            array_pop($tagParts);
         }
-        foreach ($dkimTags as $tagIndex => $tagContent) {
+        foreach ($tagParts as $tagIndex => $tagContent) {
             [$tagName, $tagValue] = explode('=', trim($tagContent), 2);
-            unset($dkimTags[$tagIndex]);
             if ($tagName === '') {
                 continue;
             }
