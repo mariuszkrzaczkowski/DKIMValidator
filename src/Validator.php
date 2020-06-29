@@ -123,7 +123,7 @@ class Validator
                 //Split into tags
                 $dkimTags = self::extractDKIMTags($signature);
 
-                //Verify all required values are present
+                //Verify all required tags are present
                 //http://tools.ietf.org/html/rfc4871#section-6.1.1
                 $required = ['v', 'a', 'b', 'bh', 'd', 'h', 's'];
                 foreach ($required as $tagIndex) {
