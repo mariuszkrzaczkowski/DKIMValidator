@@ -121,7 +121,7 @@ class Validator
             $output[$signatureIndex]['valid'] = true;
             try {
                 //Split into tags
-                $dkimTags = $this->extractDKIMTags($signature);
+                $dkimTags = self::extractDKIMTags($signature);
 
                 //Verify all required values are present
                 //http://tools.ietf.org/html/rfc4871#section-6.1.1
@@ -667,7 +667,7 @@ class Validator
      *
      * @return array
      */
-    public function extractDKIMTags(Header $header): array
+    public static function extractDKIMTags(Header $header): array
     {
         $dkimTags = explode(';', preg_replace('/\s+/', '', $header->getValue()));
         //Drop an empty last element caused by a (valid) trailing semi-colon
