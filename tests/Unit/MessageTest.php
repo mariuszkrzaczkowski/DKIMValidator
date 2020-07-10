@@ -1,6 +1,12 @@
 <?php
 
 use PHPMailer\DKIMValidator\Message;
+it(
+    'rejects an empty message',
+    function () {
+        $message = new Message('');
+    }
+)->throws(InvalidArgumentException::class);
 
 it(
     'splits a message into headers and body',
@@ -10,6 +16,7 @@ it(
         assertEquals(" C \r\nD \t E\r\n\r\n\r\n", $message->getBody());
     }
 );
+
 it(
     'parses headers correctly',
     function () {
@@ -34,5 +41,18 @@ it(
         assertEquals($utf8, $headers[2]->getValue());
         assertEquals($bencoded, $headers[3]->getRawValue());
         assertEquals($utf8, $headers[3]->getValue());
+    }
+);
+
+it(
+    'finds headers by name',
+    function () {
+        $message = new Message(
+            "A: X\r\nB : Y\t\r\n\tZ  \r\n\r\n C \r\nD \t E\r\n\r\n\r\n"
+        );
+        $headers = $message->getHeadersNamed('A');
+        assertCount(1, $headers);
+        assertEquals('X', $headers[0]->getValue());
+        assertEquals('A', $headers[0]->getLabel());
     }
 );

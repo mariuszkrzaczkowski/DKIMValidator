@@ -38,8 +38,13 @@ class Header
      */
     public function __construct(string $header)
     {
+        if (empty($header)) {
+            throw new \InvalidArgumentException();
+        }
         $this->raw = $header;
-        $headerLines = explode(self::CRLF, $header);
+        //Though the trailing break belongs to the header, we don't want to process it as a line in its own right
+        //so trim it before exploding
+        $headerLines = explode(self::CRLF, rtrim($header, "\r\n"));
         $headerLineIndex = 0;
         $currentHeaderLabel = '';
         $currentHeaderValue = '';
@@ -56,6 +61,8 @@ class Header
                 }
 
                 $currentHeaderValue .= self::FWS . $matches[1] . self::CRLF;
+            } else {
+                throw new HeaderException('Encountered something weird!');
             }
             ++$headerLineIndex;
         }
