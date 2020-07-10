@@ -1,6 +1,7 @@
 <?php
 
 use PHPMailer\DKIMValidator\Message;
+
 it(
     'rejects an empty message',
     function () {
@@ -48,11 +49,13 @@ it(
     'finds headers by name',
     function () {
         $message = new Message(
-            "A: X\r\nB : Y\t\r\n\tZ  \r\n\r\n C \r\nD \t E\r\n\r\n\r\n"
+            "A: X\r\nB : Y\t\r\n\tZ  \r\nB:P\r\n\r\n C \r\nD \t E\r\n\r\n\r\n"
         );
         $headers = $message->getHeadersNamed('A');
         assertCount(1, $headers);
         assertEquals('X', $headers[0]->getValue());
         assertEquals('A', $headers[0]->getLabel());
+        $headers = $message->getHeadersNamed('B');
+        assertCount(2, $headers);
     }
 );
