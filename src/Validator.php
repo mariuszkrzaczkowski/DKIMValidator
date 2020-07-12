@@ -669,6 +669,9 @@ class Validator
      */
     public static function extractDKIMTags(Header $header): array
     {
+        if ($header->getLowerLabel() !== 'dkim-signature') {
+            throw new \InvalidArgumentException('Attempted to extract DKIM tags from a non-DKIM header');
+        }
         $dkimTags = [];
         //DKIM-Signature headers ignore all internal spaces, which may have been added by folding
         $tagParts = explode(';', $header->getValueWithoutSpaces());
