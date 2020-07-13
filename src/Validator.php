@@ -56,6 +56,13 @@ class Validator
     protected $message;
 
     /**
+     * An instance used for resolving DNS records.
+     *
+     * @var ResolverInterface|null
+     */
+    protected $resolver;
+
+    /**
      * @var array
      */
     private $publicKeys = [];
@@ -64,10 +71,17 @@ class Validator
      * Constructor
      *
      * @param Message $message
+     * @param ResolverInterface|null $resolver
      */
-    public function __construct(Message $message)
+    public function __construct(Message $message, ResolverInterface $resolver = null)
     {
         $this->message = $message;
+        //Injecting a DNS resolver allows this to be pluggable, which also helps with testing
+        if ($resolver === null) {
+            $this->resolver = new Resolver();
+        } else {
+            $this->resolver = $resolver;
+        }
     }
 
     /**
@@ -276,7 +290,7 @@ class Validator
                 [$qType, $qFormat] = explode('/', $dkimTags['q'], 2);
                 if ($qType . '/' . $qFormat === 'dns/txt') {
                     try {
-                        $dnsKeys = self::fetchPublicKeys($dkimTags['d'], $dkimTags['s']);
+                        $dnsKeys = $this->fetchPublicKeys($dkimTags['d'], $dkimTags['s']);
                     } catch (ValidatorException $e) {
                         $output[$signatureIndex]['analysis'][] = [
                             'status' => self::STATUS_FAIL_TEMPORARY,
@@ -497,13 +511,13 @@ class Validator
      * @throws DNSException
      * @throws ValidatorException
      */
-    protected static function fetchPublicKeys(string $domain, string $selector): array
+    protected function fetchPublicKeys(string $domain, string $selector): array
     {
         if (! self::validateSelector($selector)) {
             throw new ValidatorException('Invalid selector: ' . $selector);
         }
         $host = sprintf('%s._domainkey.%s', $selector, $domain);
-        $textRecords = dns_get_record($host, DNS_TXT);
+        $textRecords = $this->resolver->getTextRecords($host);
 
         if ($textRecords === false) {
             throw new DNSException('Domain has no TXT records available in DNS, or fetching them failed');
