@@ -40,7 +40,7 @@
     }
   },
   "scripts": {
-    "test:unit": "./vendor/bin/pest",
+    "test:unit": "./vendor/bin/pest --coverage",
     "test:types": "./vendor/bin/phpstan analyse",
     "test:psalm": "./vendor/bin/psalm --show-info=true",
     "test": [
