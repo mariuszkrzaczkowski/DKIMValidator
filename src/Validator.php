@@ -58,7 +58,7 @@ class Validator
     /**
      * An instance used for resolving DNS records.
      *
-     * @var ResolverInterface|null
+     * @var ResolverInterface
      */
     protected $resolver;
 
@@ -520,7 +520,7 @@ class Validator
         $host = sprintf('%s._domainkey.%s', $selector, $domain);
         $textRecords = $this->resolver->getTextRecords($host);
 
-        if ($textRecords === false) {
+        if ($textRecords === []) {
             throw new DNSException('Domain has no TXT records available in DNS, or fetching them failed');
         }
 
