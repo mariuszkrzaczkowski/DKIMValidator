@@ -318,7 +318,8 @@ class Validator
                 $signedHeaderNames = array_unique(explode(':', $dkimTags['h']));
                 $headersToCanonicalize = [];
                 foreach ($signedHeaderNames as $headerName) {
-                    //TODO Deal with duplicate signed header values and also extra blank headers used to force invalidation
+                    //TODO Deal with duplicate signed header values
+                    //and extra blank headers used to force invalidation
                     $matchedHeaders = $this->message->getHeadersNamed($headerName);
                     foreach ($matchedHeaders as $header) {
                         $headersToCanonicalize[] = $header;
