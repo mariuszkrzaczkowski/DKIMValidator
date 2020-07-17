@@ -4,5 +4,5 @@ namespace PHPMailer\DKIMValidator;
 
 interface ResolverInterface
 {
-    public function getTextRecords(string $domain): array;
+    public static function getTextRecords(string $domain): array;
 }
