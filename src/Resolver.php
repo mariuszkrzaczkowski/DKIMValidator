@@ -12,9 +12,7 @@ class Resolver implements ResolverInterface
     public static function getTextRecords(string $domain): array
     {
         $records = dns_get_record($domain, DNS_TXT);
-        if ($records === false) {
-            return [];
-        }
-        return $records;
+        //Return empty result if the lookup fails
+        return $records === false ? [] : $records;
     }
 }
