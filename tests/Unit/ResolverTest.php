@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use PHPMailer\DKIMValidator\Resolver;
 
 it(
@@ -22,6 +24,14 @@ it(
     'returns an empty array for a non-existent domain',
     function () {
         $records = Resolver::getTextRecords('ml8Mkf0B5YSDlbkGyIgbx2ucrJDTu24HatYnSGaoCezL1e4MHN.museum');
+        assertEquals([], $records);
+    }
+);
+
+it(
+    'invalid params',
+    function () {
+        $records = Resolver::getTextRecords('');
         assertEquals([], $records);
     }
 );

@@ -280,7 +280,7 @@ class Validator
                     ];
                 }
 
-                //The 'q' tag may be empty - fall back to default if it is
+                //The 'q' tag may be empty - add a default value if it is
                 if (! array_key_exists('q', $dkimTags) || $dkimTags['q'] === '') {
                     $dkimTags['q'] = 'dns/txt';
                 }
@@ -331,6 +331,7 @@ class Validator
                     preg_replace('/b=(.*?)(;|$)/s', 'b=$2', $signature->getValue())
                 );
 
+                //Extract the encryption algorithm and hash function, which have already been validated
                 [$alg, $hash] = explode('-', $dkimTags['a']);
 
                 //Canonicalize the headers
@@ -370,6 +371,7 @@ class Validator
                     ];
 
                     //Confirm that published hash algorithm matches sig hash
+                    //The h tag in DKIM DNS records is optional, and defaults to sha256
                     if (array_key_exists('h', $publicKey) && $publicKey['h'] !== $hash) {
                         $output[$signatureIndex]['analysis'][] = [
                             'status' => self::STATUS_FAIL_PERMANENT,
@@ -381,10 +383,10 @@ class Validator
 
                     $output[$signatureIndex]['analysis'][] = [
                         'status' => self::STATUS_SUCCESS_INFO,
-                        'reason' => 'Public key hash algorithm matches signature.',
+                        'reason' => 'Public key hash algorithm (' . $hash . ') matches signature.',
                     ];
 
-                    //Confirm that the key type matches the sig key type
+                    //Confirm that the DNS key type matches the signature key type
                     if (array_key_exists('k', $publicKey) && $publicKey['k'] !== $alg) {
                         $output[$signatureIndex]['analysis'][] = [
                             'status' => self::STATUS_FAIL_PERMANENT,
@@ -396,7 +398,7 @@ class Validator
 
                     $output[$signatureIndex]['analysis'][] = [
                         'status' => self::STATUS_SUCCESS_INFO,
-                        'reason' => 'Public key type matches signature.',
+                        'reason' => 'Public key type(' . $alg . ') matches signature.',
                     ];
 
                     //Ensure the service type tag allows email usage
@@ -518,19 +520,17 @@ class Validator
             throw new ValidatorException('Invalid selector: ' . $selector);
         }
         $host = sprintf('%s._domainkey.%s', $selector, $domain);
+        //The resolver takes care of merging if the record has been split into multiple strings
         $textRecords = $this->resolver->getTextRecords($host);
 
         if ($textRecords === []) {
-            throw new DNSException('Domain has no TXT records available in DNS, or fetching them failed');
+            throw new DNSException('Domain has no DKIM records in DNS, or fetching them failed');
         }
 
         $publicKeys = [];
         foreach ($textRecords as $textRecord) {
-            //Long keys may be split into pieces
-            if (array_key_exists('entries', $textRecord)) {
-                $textRecord['txt'] = implode('', $textRecord['entries']);
-            }
-            $parts = explode(';', trim($textRecord['txt']));
+            //Dismantle the DKIM record
+            $parts = explode(';', trim($textRecord));
             $record = [];
             foreach ($parts as $part) {
                 //Last record is empty if there is a trailing semicolon
@@ -656,7 +656,12 @@ class Validator
         if ($decodedSignature === false) {
             throw new DKIMException('DKIM signature contains invalid base64 data');
         }
-        $verified = openssl_verify($signedString, $decodedSignature, $key, $hashAlgo);
+        try {
+            $verified = openssl_verify($signedString, $decodedSignature, $key, $hashAlgo);
+        } catch (\ErrorException $e) {
+            //Things like incorrectly formatted keys will trigger this
+            throw new DKIMException('Could not verify signature: ' . $e->getMessage());
+        }
         switch ($verified) {
             case 1:
                 return true;

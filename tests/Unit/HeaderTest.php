@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use PHPMailer\DKIMValidator\Header;
 use PHPMailer\DKIMValidator\HeaderException;
 

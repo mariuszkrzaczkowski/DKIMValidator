@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
+use PHPMailer\DKIMValidator\DKIMException;
 use PHPMailer\DKIMValidator\Header;
 use PHPMailer\DKIMValidator\Message;
+use PHPMailer\DKIMValidator\Tests\TestingResolver;
 use PHPMailer\DKIMValidator\Validator;
 use PHPMailer\DKIMValidator\ValidatorException;
 
@@ -417,5 +421,237 @@ it(
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
         assertArrayHasKey('valid', $validation);
+    }
+);
+
+it(
+    'ignores a record with an unknown q tag',
+    function () {
+        $message = "Date: Wed, 9 Oct 2019 18:31:45 +0000\r\n" .
+            "To: DKIM test <3yHp6B4Ge9vspC@dkimvalidator.com>\r\n" .
+            "From: Email test <test@example.com>\r\n" .
+            "Subject: DKIM sign\r\n" .
+            "Message-ID: <4JyENfIuXMRgdMymktmFxe0oqnSzslfdvbHYR4E@Mac-Pro.local>\r\n" .
+            "X-Mailer: PHPMailer 6.1.6 (https://github.com/PHPMailer/PHPMailer)\r\n" .
+            "MIME-Version: 1.0\r\n" .
+            "Content-Type: text/html; charset=iso-8859-1\r\n" .
+            "DKIM-Signature: v=1; d=example.com; i=test@example.com; s=phpmailer;\r\n" .
+            " a=rsa-sha256; l=6; t=1570645905; c=relaxed/simple; q=abc/xyz;\r\n" .
+            " h=Date:To:From:Subject:Message-ID:X-Mailer:Content-Type;\r\n" .
+            " bh=g3zLYH4xKxcPrHOD18z9YfpQcnk/GaJedfustWU5uGs=;\r\n" .
+            " b=ljWj1co9L6sMrXJ1yBwJ771dnjvVKZN3i97Q/QB0lGQf43FPdautceMsiu3M132QopX63Osqp\r\n" .
+            " T1Oz40T9EMONwzCpzIMKKB/tNjDe5qw+evPjf/5mAaiVpIevh1P377t/K0y0nRmCaPbfa0sbm\r\n" .
+            " eoFMSapHqTbf2phVJOCo7ejp3laovXSOhQoLZQrnCCW8LnqibtSoAO24ryr+B045XyBIcGPQk\r\n" .
+            " IWnRd043/Onv9ACRzau3F80gszR/86grpUwmZ88wHTL8R6g/pqz2eExQNNRmkFaVkwFG0vT5o\r\n" .
+            " Rh7Z0ZEl+n4fqoyrTctR8ZEimwwd+xFOtx1hB9KgjW+JVcdTVQ==\r\n\r\n" .
+            "test";
+
+        $validator = new Validator(new Message($message));
+        $validation = $validator->validate();
+        assertArrayHasKey('valid', $validation);
+    }
+);
+
+it(
+    'retrieves a matching public key correctly',
+    function () {
+        $message = "Date: Wed, 9 Oct 2019 18:31:45 +0000\r\n" .
+            "To: DKIM test <3yHp6B4Ge9vspC@dkimvalidator.com>\r\n" .
+            "From: Email test <test@example.com>\r\n" .
+            "Subject: DKIM sign\r\n" .
+            "Message-ID: <4JyENfIuXMRgdMymktmFxe0oqnSzslfdvbHYR4E@Mac-Pro.local>\r\n" .
+            "X-Mailer: PHPMailer 6.1.6 (https://github.com/PHPMailer/PHPMailer)\r\n" .
+            "MIME-Version: 1.0\r\n" .
+            "Content-Type: text/html; charset=iso-8859-1\r\n" .
+            "DKIM-Signature: v=1; d=example.com; s=phpmailer;\r\n" .
+            " a=rsa-sha256; q=dns/txt; l=6; t=1570645905; c=relaxed/simple;\r\n" .
+            " h=Date:To:From:Subject:Message-ID:X-Mailer:Content-Type;\r\n" .
+            " bh=g3zLYH4xKxcPrHOD18z9YfpQcnk/GaJedfustWU5uGs=;\r\n" .
+            " b=ljWj1co9L6sMrXJ1yBwJ771dnjvVKZN3i97Q/QB0lGQf43FPdautceMsiu3M132QopX63Osqp\r\n" .
+            " T1Oz40T9EMONwzCpzIMKKB/tNjDe5qw+evPjf/5mAaiVpIevh1P377t/K0y0nRmCaPbfa0sbm\r\n" .
+            " eoFMSapHqTbf2phVJOCo7ejp3laovXSOhQoLZQrnCCW8LnqibtSoAO24ryr+B045XyBIcGPQk\r\n" .
+            " IWnRd043/Onv9ACRzau3F80gszR/86grpUwmZ88wHTL8R6g/pqz2eExQNNRmkFaVkwFG0vT5o\r\n" .
+            " Rh7Z0ZEl+n4fqoyrTctR8ZEimwwd+xFOtx1hB9KgjW+JVcdTVQ==\r\n\r\n" .
+            "test";
+
+        $validator = new Validator(new Message($message), new TestingResolver());
+        $validation = $validator->validate();
+        assertArrayHasKey('valid', $validation);
+        assertFalse($validation['valid']);
+    }
+);
+
+it(
+    'detects a missing public key',
+    function () {
+        $message = "Date: Wed, 9 Oct 2019 18:31:45 +0000\r\n" .
+            "To: DKIM test <3yHp6B4Ge9vspC@dkimvalidator.com>\r\n" .
+            "From: Email test <test@example.com>\r\n" .
+            "Subject: DKIM sign\r\n" .
+            "Message-ID: <4JyENfIuXMRgdMymktmFxe0oqnSzslfdvbHYR4E@Mac-Pro.local>\r\n" .
+            "X-Mailer: PHPMailer 6.1.6 (https://github.com/PHPMailer/PHPMailer)\r\n" .
+            "MIME-Version: 1.0\r\n" .
+            "Content-Type: text/html; charset=iso-8859-1\r\n" .
+            "DKIM-Signature: v=1; d=example.com; s=phpmailerx;\r\n" .
+            " a=rsa-sha256; q=dns/txt; l=6; t=1570645905; c=relaxed/simple;\r\n" .
+            " h=Date:To:From:Subject:Message-ID:X-Mailer:Content-Type;\r\n" .
+            " bh=g3zLYH4xKxcPrHOD18z9YfpQcnk/GaJedfustWU5uGs=;\r\n" .
+            " b=ljWj1co9L6sMrXJ1yBwJ771dnjvVKZN3i97Q/QB0lGQf43FPdautceMsiu3M132QopX63Osqp\r\n" .
+            " T1Oz40T9EMONwzCpzIMKKB/tNjDe5qw+evPjf/5mAaiVpIevh1P377t/K0y0nRmCaPbfa0sbm\r\n" .
+            " eoFMSapHqTbf2phVJOCo7ejp3laovXSOhQoLZQrnCCW8LnqibtSoAO24ryr+B045XyBIcGPQk\r\n" .
+            " IWnRd043/Onv9ACRzau3F80gszR/86grpUwmZ88wHTL8R6g/pqz2eExQNNRmkFaVkwFG0vT5o\r\n" .
+            " Rh7Z0ZEl+n4fqoyrTctR8ZEimwwd+xFOtx1hB9KgjW+JVcdTVQ==\r\n\r\n" .
+            "test";
+
+        $validator = new Validator(new Message($message), new TestingResolver());
+        $validation = $validator->validate();
+        assertArrayHasKey('valid', $validation);
+        assertFalse($validation['valid']);
+        throw new ValidatorException();
+    }
+)->throws(ValidatorException::class);
+
+it(
+    'identifies a mismatching body signature',
+    function () {
+        //1 char in the message body has been changed, so body signature should not match
+        $message = "Date: Wed, 9 Oct 2019 18:31:45 +0000\r\n" .
+            "To: DKIM test <3yHp6B4Ge9vspC@dkimvalidator.com>\r\n" .
+            "From: Email test <test@example.com>\r\n" .
+            "Subject: DKIM sign\r\n" .
+            "Message-ID: <4JyENfIuXMRgdMymktmFxe0oqnSzslfdvbHYR4E@Mac-Pro.local>\r\n" .
+            "X-Mailer: PHPMailer 6.1.6 (https://github.com/PHPMailer/PHPMailer)\r\n" .
+            "MIME-Version: 1.0\r\n" .
+            "Content-Type: text/html; charset=iso-8859-1\r\n" .
+            "DKIM-Signature: v=1; d=example.com; i=test@example.com; s=phpmailer;\r\n" .
+            " a=rsa-sha256; l=6; t=1570645905; c=relaxed/simple; q=dns/txt;\r\n" .
+            " h=Date:To:From:Subject:Message-ID:X-Mailer:Content-Type;\r\n" .
+            " bh=g3zLYH4xKxcPrHOD18z9YfpQcnk/GaJedfustWU5uGs=;\r\n" .
+            " b=ljWj1co9L6sMrXJ1yBwJ771dnjvVKZN3i97Q/QB0lGQf43FPdautceMsiu3M132QopX63Osqp\r\n" .
+            " T1Oz40T9EMONwzCpzIMKKB/tNjDe5qw+evPjf/5mAaiVpIevh1P377t/K0y0nRmCaPbfa0sbm\r\n" .
+            " eoFMSapHqTbf2phVJOCo7ejp3laovXSOhQoLZQrnCCW8LnqibtSoAO24ryr+B045XyBIcGPQk\r\n" .
+            " IWnRd043/Onv9ACRzau3F80gszR/86grpUwmZ88wHTL8R6g/pqz2eExQNNRmkFaVkwFG0vT5o\r\n" .
+            " Rh7Z0ZEl+n4fqoyrTctR8ZEimwwd+xFOtx1hB9KgjW+JVcdTVQ==\r\n\r\n" .
+            "text";
+
+        $validator = new Validator(new Message($message), new TestingResolver());
+        $validation = $validator->validate();
+        assertFalse($validation['valid']);
+    }
+);
+
+it(
+    'identifies an mismatching DKIM record version',
+    function () {
+        //Compares the v=1 DKIM tag in the header with the v=DKIM1 part of the DNS record
+        $message = "Date: Wed, 9 Oct 2019 18:31:45 +0000\r\n" .
+            "To: DKIM test <3yHp6B4Ge9vspC@dkimvalidator.com>\r\n" .
+            "From: Email test <test@example.com>\r\n" .
+            "Subject: DKIM sign\r\n" .
+            "Message-ID: <4JyENfIuXMRgdMymktmFxe0oqnSzslfdvbHYR4E@Mac-Pro.local>\r\n" .
+            "X-Mailer: PHPMailer 6.1.6 (https://github.com/PHPMailer/PHPMailer)\r\n" .
+            "MIME-Version: 1.0\r\n" .
+            "Content-Type: text/html; charset=iso-8859-1\r\n" .
+            "DKIM-Signature: v=1; d=example.com; i=test@example.com; s=baddkimversion;\r\n" .
+            " a=rsa-sha256; l=6; t=1570645905; c=relaxed/simple; q=dns/txt;\r\n" .
+            " h=Date:To:From:Subject:Message-ID:X-Mailer:Content-Type;\r\n" .
+            " bh=g3zLYH4xKxcPrHOD18z9YfpQcnk/GaJedfustWU5uGs=;\r\n" .
+            " b=ljWj1co9L6sMrXJ1yBwJ771dnjvVKZN3i97Q/QB0lGQf43FPdautceMsiu3M132QopX63Osqp\r\n" .
+            " T1Oz40T9EMONwzCpzIMKKB/tNjDe5qw+evPjf/5mAaiVpIevh1P377t/K0y0nRmCaPbfa0sbm\r\n" .
+            " eoFMSapHqTbf2phVJOCo7ejp3laovXSOhQoLZQrnCCW8LnqibtSoAO24ryr+B045XyBIcGPQk\r\n" .
+            " IWnRd043/Onv9ACRzau3F80gszR/86grpUwmZ88wHTL8R6g/pqz2eExQNNRmkFaVkwFG0vT5o\r\n" .
+            " Rh7Z0ZEl+n4fqoyrTctR8ZEimwwd+xFOtx1hB9KgjW+JVcdTVQ==\r\n\r\n" .
+            "test";
+
+        $validator = new Validator(new Message($message), new TestingResolver());
+        $validation = $validator->validate();
+        assertFalse($validation['valid']);
+    }
+);
+
+it(
+    'identifies a mismatching hash algorithm',
+    function () {
+        //Compares the hash algorithm in the DKIM a tag in the header with an optional h tag in the DNS record
+        $message = "Date: Wed, 9 Oct 2019 18:31:45 +0000\r\n" .
+            "To: DKIM test <3yHp6B4Ge9vspC@dkimvalidator.com>\r\n" .
+            "From: Email test <test@example.com>\r\n" .
+            "Subject: DKIM sign\r\n" .
+            "Message-ID: <4JyENfIuXMRgdMymktmFxe0oqnSzslfdvbHYR4E@Mac-Pro.local>\r\n" .
+            "X-Mailer: PHPMailer 6.1.6 (https://github.com/PHPMailer/PHPMailer)\r\n" .
+            "MIME-Version: 1.0\r\n" .
+            "Content-Type: text/html; charset=iso-8859-1\r\n" .
+            "DKIM-Signature: v=1; d=example.com; i=test@example.com; s=badhashtype;\r\n" .
+            " a=rsa-sha256; l=6; t=1570645905; c=relaxed/simple; q=dns/txt;\r\n" .
+            " h=Date:To:From:Subject:Message-ID:X-Mailer:Content-Type;\r\n" .
+            " bh=g3zLYH4xKxcPrHOD18z9YfpQcnk/GaJedfustWU5uGs=;\r\n" .
+            " b=ljWj1co9L6sMrXJ1yBwJ771dnjvVKZN3i97Q/QB0lGQf43FPdautceMsiu3M132QopX63Osqp\r\n" .
+            " T1Oz40T9EMONwzCpzIMKKB/tNjDe5qw+evPjf/5mAaiVpIevh1P377t/K0y0nRmCaPbfa0sbm\r\n" .
+            " eoFMSapHqTbf2phVJOCo7ejp3laovXSOhQoLZQrnCCW8LnqibtSoAO24ryr+B045XyBIcGPQk\r\n" .
+            " IWnRd043/Onv9ACRzau3F80gszR/86grpUwmZ88wHTL8R6g/pqz2eExQNNRmkFaVkwFG0vT5o\r\n" .
+            " Rh7Z0ZEl+n4fqoyrTctR8ZEimwwd+xFOtx1hB9KgjW+JVcdTVQ==\r\n\r\n" .
+            "test";
+
+        $validator = new Validator(new Message($message), new TestingResolver());
+        $validation = $validator->validate();
+        assertFalse($validation['valid']);
+    }
+);
+
+it(
+    'identifies a mismatching encryption algorithm',
+    function () {
+        //Compares the hash algorithm in the DKIM a tag in the header with an optional h tag in the DNS record
+        $message = "Date: Wed, 9 Oct 2019 18:31:45 +0000\r\n" .
+            "To: DKIM test <3yHp6B4Ge9vspC@dkimvalidator.com>\r\n" .
+            "From: Email test <test@example.com>\r\n" .
+            "Subject: DKIM sign\r\n" .
+            "Message-ID: <4JyENfIuXMRgdMymktmFxe0oqnSzslfdvbHYR4E@Mac-Pro.local>\r\n" .
+            "X-Mailer: PHPMailer 6.1.6 (https://github.com/PHPMailer/PHPMailer)\r\n" .
+            "MIME-Version: 1.0\r\n" .
+            "Content-Type: text/html; charset=iso-8859-1\r\n" .
+            "DKIM-Signature: v=1; d=example.com; i=test@example.com; s=badkeytype;\r\n" .
+            " a=rsa-sha256; l=6; t=1570645905; c=relaxed/simple; q=dns/txt;\r\n" .
+            " h=Date:To:From:Subject:Message-ID:X-Mailer:Content-Type;\r\n" .
+            " bh=g3zLYH4xKxcPrHOD18z9YfpQcnk/GaJedfustWU5uGs=;\r\n" .
+            " b=ljWj1co9L6sMrXJ1yBwJ771dnjvVKZN3i97Q/QB0lGQf43FPdautceMsiu3M132QopX63Osqp\r\n" .
+            " T1Oz40T9EMONwzCpzIMKKB/tNjDe5qw+evPjf/5mAaiVpIevh1P377t/K0y0nRmCaPbfa0sbm\r\n" .
+            " eoFMSapHqTbf2phVJOCo7ejp3laovXSOhQoLZQrnCCW8LnqibtSoAO24ryr+B045XyBIcGPQk\r\n" .
+            " IWnRd043/Onv9ACRzau3F80gszR/86grpUwmZ88wHTL8R6g/pqz2eExQNNRmkFaVkwFG0vT5o\r\n" .
+            " Rh7Z0ZEl+n4fqoyrTctR8ZEimwwd+xFOtx1hB9KgjW+JVcdTVQ==\r\n\r\n" .
+            "test";
+
+        $validator = new Validator(new Message($message), new TestingResolver());
+        $validation = $validator->validate();
+        assertFalse($validation['valid']);
+    }
+);
+
+it(
+    'identifies an invalid or unknown DKIM service type',
+    function () {
+        //Compares the hash algorithm in the DKIM a tag in the header with an optional h tag in the DNS record
+        $message = "Date: Wed, 9 Oct 2019 18:31:45 +0000\r\n" .
+            "To: DKIM test <3yHp6B4Ge9vspC@dkimvalidator.com>\r\n" .
+            "From: Email test <test@example.com>\r\n" .
+            "Subject: DKIM sign\r\n" .
+            "Message-ID: <4JyENfIuXMRgdMymktmFxe0oqnSzslfdvbHYR4E@Mac-Pro.local>\r\n" .
+            "X-Mailer: PHPMailer 6.1.6 (https://github.com/PHPMailer/PHPMailer)\r\n" .
+            "MIME-Version: 1.0\r\n" .
+            "Content-Type: text/html; charset=iso-8859-1\r\n" .
+            "DKIM-Signature: v=1; d=example.com; i=test@example.com; s=badservicetype;\r\n" .
+            " a=rsa-sha256; l=6; t=1570645905; c=relaxed/simple; q=dns/txt;\r\n" .
+            " h=Date:To:From:Subject:Message-ID:X-Mailer:Content-Type;\r\n" .
+            " bh=g3zLYH4xKxcPrHOD18z9YfpQcnk/GaJedfustWU5uGs=;\r\n" .
+            " b=ljWj1co9L6sMrXJ1yBwJ771dnjvVKZN3i97Q/QB0lGQf43FPdautceMsiu3M132QopX63Osqp\r\n" .
+            " T1Oz40T9EMONwzCpzIMKKB/tNjDe5qw+evPjf/5mAaiVpIevh1P377t/K0y0nRmCaPbfa0sbm\r\n" .
+            " eoFMSapHqTbf2phVJOCo7ejp3laovXSOhQoLZQrnCCW8LnqibtSoAO24ryr+B045XyBIcGPQk\r\n" .
+            " IWnRd043/Onv9ACRzau3F80gszR/86grpUwmZ88wHTL8R6g/pqz2eExQNNRmkFaVkwFG0vT5o\r\n" .
+            " Rh7Z0ZEl+n4fqoyrTctR8ZEimwwd+xFOtx1hB9KgjW+JVcdTVQ==\r\n\r\n" .
+            "test";
+
+        $validator = new Validator(new Message($message), new TestingResolver());
+        $validation = $validator->validate();
+        assertFalse($validation['valid']);
     }
 );
