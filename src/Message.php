@@ -68,10 +68,13 @@ class Message
         //Normalize line breaks to CRLF
         $message = str_replace([self::CRLF, self::CR, self::LF], [self::LF, self::LF, self::CRLF], $this->raw);
         //Split out headers and body, separated by the first double line break
+        if (strpos($message, self::CRLF . self::CRLF) === false) {
+            throw new InvalidArgumentException('Message content is not a valid email message');
+        }
         [$headers, $body] = explode(self::CRLF . self::CRLF, $message, 2);
-        $this->body = $body;
         //The last header retains a trailing line break, because the break is considered part of the header
         $this->headers = $headers . self::CRLF;
+        $this->body = $body;
     }
 
     /**

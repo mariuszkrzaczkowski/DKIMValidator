@@ -12,6 +12,13 @@ it(
 )->throws(InvalidArgumentException::class);
 
 it(
+    'rejects an incomplete message',
+    function () {
+        $message = new Message('test');
+    }
+)->throws(InvalidArgumentException::class);
+
+it(
     'splits a message into headers and body',
     function () {
         $message = new Message("A: X\r\nB : Y\t\r\n\tZ  \r\n\r\n C \r\nD \t E\r\n\r\n\r\n");

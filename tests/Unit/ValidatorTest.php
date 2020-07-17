@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use PHPMailer\DKIMValidator\DKIMException;
+use PHPMailer\DKIMValidator\DNSException;
 use PHPMailer\DKIMValidator\Header;
 use PHPMailer\DKIMValidator\Message;
 use PHPMailer\DKIMValidator\Tests\TestingResolver;
@@ -653,5 +654,88 @@ it(
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
         assertFalse($validation['valid']);
+    }
+);
+
+it(
+    'canonicalizes an empty body correctly',
+    function () {
+        $validator = new Validator(new Message("test:test\r\n\r\n"), new TestingResolver());
+        $body = $validator->canonicalizeBody();
+        assertEquals(Validator::CRLF, $body);
+    }
+);
+
+it(
+    'validates a DKIM selector',
+    function () {
+        $validator = new Validator(new Message("test:test\r\n\r\ntest"), new TestingResolver());
+        $validator->fetchPublicKeys('example.com', 'bad%selector');
+    }
+)->throws(ValidatorException::class);
+
+it(
+    'ignores a trailing ; in a DKIM record',
+    function () {
+        $validator = new Validator(new Message("test:test\r\n\r\ntest"), new TestingResolver());
+        $keys = $validator->fetchPublicKeys('example.com', 'trailingsemi');
+        assertCount(1, $keys);
+        assertCount(3, $keys[0]);
+    }
+);
+
+it(
+    'detects a DKIM record with an invalid format',
+    function () {
+        $validator = new Validator(new Message("test:test\r\n\r\ntest"), new TestingResolver());
+        $validator->fetchPublicKeys('example.com', 'badformat');
+    }
+)->throws(DNSException::class);
+
+it(
+    'refuses to canonicalize and empty set of headers',
+    function () {
+        $validator = new Validator(new Message("test:test\r\n\r\ntest"), new TestingResolver());
+        $validator->canonicalizeHeaders([]);
+    }
+)->throws(DKIMException::class);
+
+it(
+    'detects an invalid signature',
+    function () {
+        Validator::validateSignature(
+            'abc',
+            '%%%',
+            '',
+            ''
+        );
+    }
+)->throws(DKIMException::class);
+
+it(
+    'detects an invalid key',
+    function () {
+        Validator::validateSignature(
+            'abc',
+            'abc',
+            'abc',
+            Validator::DEFAULT_HASH_FUNCTION
+        );
+    }
+)->throws(DKIMException::class);
+
+it(
+    'skips unnamed DKIM tags',
+    function () {
+        $tags = Validator::extractDKIMTags(new Header('DKIM-Signature: s=phpmailer; =true'));
+        assertEquals(['s' => 'phpmailer'], $tags);
+    }
+);
+
+it(
+    'skips trailing semi-colon in DKIM tags',
+    function () {
+        $tags = Validator::extractDKIMTags(new Header('DKIM-Signature: s=phpmailer; x=true;'));
+        assertEquals(['s' => 'phpmailer', 'x' => 'true'], $tags);
     }
 );

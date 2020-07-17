@@ -514,7 +514,7 @@ class Validator
      * @throws DNSException
      * @throws ValidatorException
      */
-    protected function fetchPublicKeys(string $domain, string $selector): array
+    public function fetchPublicKeys(string $domain, string $selector): array
     {
         if (! self::validateSelector($selector)) {
             throw new ValidatorException('Invalid selector: ' . $selector);
@@ -640,7 +640,7 @@ class Validator
      *
      * @throws DKIMException
      */
-    protected static function validateSignature(
+    public static function validateSignature(
         string $publicKey,
         string $signature,
         string $signedString,
