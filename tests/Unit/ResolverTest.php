@@ -13,6 +13,6 @@ it(
     'returns an empty array for a non-existent DKIM record',
     function () {
         $records = Resolver::getTextRecords('asdfghjkl._domainkey.example.com');
-        assertEmpty($records);
+        assertEquals([], $records);
     }
 );
