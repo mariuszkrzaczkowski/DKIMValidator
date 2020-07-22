@@ -96,12 +96,18 @@ it(
             assertTrue(true);
             return;
         }
-        $validator = new Validator(new Message(file_get_contents($messageFile)));
-        $validation = $validator->validate();
-        assertArrayHasKey('valid', $validation);
-        assertFalse($validation['valid']);
-        $validation = $validator->validateBoolean();
-        assertFalse($validation);
+        $message = file_get_contents($messageFile);
+        if ($message !== false) {
+            assertNotFalse($message);
+            $validator = new Validator(new Message($message));
+            $validation = $validator->validate();
+            assertArrayHasKey('valid', $validation);
+            assertFalse($validation['valid']);
+            $validation = $validator->validateBoolean();
+            assertFalse($validation);
+        } else {
+            assertFalse($message);
+        }
     }
 );
 
