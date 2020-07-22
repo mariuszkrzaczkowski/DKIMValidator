@@ -658,6 +658,64 @@ it(
 );
 
 it(
+    'identifies an invalid signature algorithm',
+    function () {
+        //Has an invalid value in the DKIM 'a' tag
+        $message = "Date: Wed, 9 Oct 2019 18:31:45 +0000\r\n" .
+            "To: DKIM test <3yHp6B4Ge9vspC@dkimvalidator.com>\r\n" .
+            "From: Email test <test@example.com>\r\n" .
+            "Subject: DKIM sign\r\n" .
+            "Message-ID: <4JyENfIuXMRgdMymktmFxe0oqnSzslfdvbHYR4E@Mac-Pro.local>\r\n" .
+            "X-Mailer: PHPMailer 6.1.6 (https://github.com/PHPMailer/PHPMailer)\r\n" .
+            "MIME-Version: 1.0\r\n" .
+            "Content-Type: text/html; charset=iso-8859-1\r\n" .
+            "DKIM-Signature: v=1; d=example.com; i=test@example.com; s=phpmailer;\r\n" .
+            " a=bad_value; l=6; t=1570645905; c=relaxed/simple; q=dns/txt;\r\n" .
+            " h=Date:To:From:Subject:Message-ID:X-Mailer:Content-Type;\r\n" .
+            " bh=g3zLYH4xKxcPrHOD18z9YfpQcnk/GaJedfustWU5uGs=;\r\n" .
+            " b=ljWj1co9L6sMrXJ1yBwJ771dnjvVKZN3i97Q/QB0lGQf43FPdautceMsiu3M132QopX63Osqp\r\n" .
+            " T1Oz40T9EMONwzCpzIMKKB/tNjDe5qw+evPjf/5mAaiVpIevh1P377t/K0y0nRmCaPbfa0sbm\r\n" .
+            " eoFMSapHqTbf2phVJOCo7ejp3laovXSOhQoLZQrnCCW8LnqibtSoAO24ryr+B045XyBIcGPQk\r\n" .
+            " IWnRd043/Onv9ACRzau3F80gszR/86grpUwmZ88wHTL8R6g/pqz2eExQNNRmkFaVkwFG0vT5o\r\n" .
+            " Rh7Z0ZEl+n4fqoyrTctR8ZEimwwd+xFOtx1hB9KgjW+JVcdTVQ==\r\n\r\n" .
+            "test";
+
+        $validator = new Validator(new Message($message), new TestingResolver());
+        $validation = $validator->validate();
+        assertFalse($validation['valid']);
+    }
+);
+
+it(
+    'identifies a valid signature algorithm that does not exist in openssl',
+    function () {
+        //Has an unknown signature type in the DKIM 'a' tag
+        $message = "Date: Wed, 9 Oct 2019 18:31:45 +0000\r\n" .
+            "To: DKIM test <3yHp6B4Ge9vspC@dkimvalidator.com>\r\n" .
+            "From: Email test <test@example.com>\r\n" .
+            "Subject: DKIM sign\r\n" .
+            "Message-ID: <4JyENfIuXMRgdMymktmFxe0oqnSzslfdvbHYR4E@Mac-Pro.local>\r\n" .
+            "X-Mailer: PHPMailer 6.1.6 (https://github.com/PHPMailer/PHPMailer)\r\n" .
+            "MIME-Version: 1.0\r\n" .
+            "Content-Type: text/html; charset=iso-8859-1\r\n" .
+            "DKIM-Signature: v=1; d=example.com; i=test@example.com; s=phpmailer;\r\n" .
+            " a=banana-duck; l=6; t=1570645905; c=relaxed/simple; q=dns/txt;\r\n" .
+            " h=Date:To:From:Subject:Message-ID:X-Mailer:Content-Type;\r\n" .
+            " bh=g3zLYH4xKxcPrHOD18z9YfpQcnk/GaJedfustWU5uGs=;\r\n" .
+            " b=ljWj1co9L6sMrXJ1yBwJ771dnjvVKZN3i97Q/QB0lGQf43FPdautceMsiu3M132QopX63Osqp\r\n" .
+            " T1Oz40T9EMONwzCpzIMKKB/tNjDe5qw+evPjf/5mAaiVpIevh1P377t/K0y0nRmCaPbfa0sbm\r\n" .
+            " eoFMSapHqTbf2phVJOCo7ejp3laovXSOhQoLZQrnCCW8LnqibtSoAO24ryr+B045XyBIcGPQk\r\n" .
+            " IWnRd043/Onv9ACRzau3F80gszR/86grpUwmZ88wHTL8R6g/pqz2eExQNNRmkFaVkwFG0vT5o\r\n" .
+            " Rh7Z0ZEl+n4fqoyrTctR8ZEimwwd+xFOtx1hB9KgjW+JVcdTVQ==\r\n\r\n" .
+            "test";
+
+        $validator = new Validator(new Message($message), new TestingResolver());
+        $validation = $validator->validate();
+        assertFalse($validation['valid']);
+    }
+);
+
+it(
     'canonicalizes an empty body correctly',
     function () {
         $validator = new Validator(new Message("test:test\r\n\r\n"), new TestingResolver());

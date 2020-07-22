@@ -331,8 +331,35 @@ class Validator
                     preg_replace('/b=(.*?)(;|$)/s', 'b=$2', $signature->getValue())
                 );
 
-                //Extract the encryption algorithm and hash function, which have already been validated
-                [$alg, $hash] = explode('-', $dkimTags['a']);
+                //Extract the encryption algorithm and hash function and validate according to the
+                //https://tools.ietf.org/html/rfc6376#section-3.5 definition of the `a` tag
+                $matches = [];
+                if (
+                    preg_match(
+                        '/^(rsa|[a-zA-Z][a-zA-Z\d]*)-(sha1|sha256|[a-zA-Z][a-zA-Z\d]*)$/',
+                        $dkimTags['a'],
+                        $matches
+                    )
+                ) {
+                    $alg = $matches[1];
+                    $hash = $matches[2];
+                } else {
+                    $output[$signatureIndex]['analysis'][] = [
+                        'status' => self::STATUS_FAIL_PERMANENT,
+                        'reason' => '\'a\' tag uses an invalid signature algorithm specifier',
+                    ];
+                    throw new ValidatorException();
+                }
+
+                # Check that the hash algorithm is available in openssl
+                if (! in_array($hash, openssl_get_md_methods(true), true)) {
+                    $output[$signatureIndex]['analysis'][] = [
+                        'status' => self::STATUS_FAIL_PERMANENT,
+                        'reason' => "Signature algorithm ${hash} is not available in" .
+                            " openssl",
+                    ];
+                    throw new ValidatorException();
+                }
 
                 //Canonicalize the headers
                 $canonicalHeaders = $this->canonicalizeHeaders($headersToCanonicalize, $headerCA);
@@ -418,11 +445,11 @@ class Validator
 
                     //@TODO check t= flags
 
-                    # Check that the hash algorithm is available in openssl
+                    // Same as the earlier check for the DKIM a tag, but for the DNS record
                     if (! in_array($hash, openssl_get_md_methods(true), true)) {
                         $output[$signatureIndex]['analysis'][] = [
                             'status' => self::STATUS_FAIL_PERMANENT,
-                            'reason' => "Signature algorithm ${hash} is not available for openssl_verify(), key #${keyIndex})",
+                            'reason' => "Signature algorithm ${hash} is not available in openssl, key #${keyIndex}",
                         ];
                         throw new ValidatorException();
                     }
