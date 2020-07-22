@@ -156,7 +156,7 @@ class Validator
                 }
 
                 //Validate DKIM version number
-                if (array_key_exists('v', $dkimTags) && (int) $dkimTags['v'] !== 1) {
+                if (array_key_exists('v', $dkimTags) && (int)$dkimTags['v'] !== 1) {
                     $output[$signatureIndex]['analysis'][] = [
                         'status' => self::STATUS_FAIL_PERMANENT,
                         'reason' => "Incompatible DKIM version: ${dkimTags['v']}",
@@ -206,7 +206,7 @@ class Validator
                 //so it's common not to use the `l` tag
                 if (array_key_exists('l', $dkimTags)) {
                     $bodyLength = strlen($canonicalBody);
-                    if ((int) $dkimTags['l'] > $bodyLength) {
+                    if ((int)$dkimTags['l'] > $bodyLength) {
                         $output[$signatureIndex]['analysis'][] = [
                             'status' => self::STATUS_FAIL_PERMANENT,
                             'reason' => 'Body too short: ' . $dkimTags['l'] . '/' . $bodyLength,
@@ -254,7 +254,7 @@ class Validator
 
                 //Validate and check expiry time
                 if (array_key_exists('x', $dkimTags)) {
-                    if ((int) $dkimTags['x'] < time()) {
+                    if ((int)$dkimTags['x'] < time()) {
                         $output[$signatureIndex]['analysis'][] = [
                             'status' => self::STATUS_FAIL_PERMANENT,
                             'reason' => 'Signature has expired.',
@@ -266,7 +266,7 @@ class Validator
                         'status' => self::STATUS_SUCCESS_INFO,
                         'reason' => 'Signature has not expired',
                     ];
-                    if ((int) $dkimTags['x'] < (int) $dkimTags['t']) {
+                    if ((int)$dkimTags['x'] < (int)$dkimTags['t']) {
                         $output[$signatureIndex]['analysis'][] = [
                             'status' => self::STATUS_FAIL_PERMANENT,
                             'reason' => 'Expiry time is before signature time.',
@@ -515,14 +515,14 @@ class Validator
             //Remove trailing space
             $canonicalBody = preg_replace('/[ \t]+$/m', '', $canonicalBody);
             //Replace runs of whitespace with a single space
-            $canonicalBody = preg_replace('/[ \t]+/m', self::SPACE, (string) $canonicalBody);
+            $canonicalBody = preg_replace('/[ \t]+/m', self::SPACE, (string)$canonicalBody);
         }
         //Always perform rules for "simple" canonicalization as well
         //http://tools.ietf.org/html/rfc4871#section-3.4.3
         //Remove any trailing empty lines
-        $canonicalBody = preg_replace('/\n+$/', '', (string) $canonicalBody);
+        $canonicalBody = preg_replace('/\n+$/', '', (string)$canonicalBody);
         //Convert line breaks back to CRLF
-        $canonicalBody = str_replace(self::LF, self::CRLF, (string) $canonicalBody);
+        $canonicalBody = str_replace(self::LF, self::CRLF, (string)$canonicalBody);
 
         //Add last trailing CRLF
         $canonicalBody .= self::CRLF;
@@ -601,7 +601,7 @@ class Validator
         $selectorpat = $sub_domain . '(\.' . $sub_domain . ')*';
         */
 
-        return (bool) preg_match('/^' . self::SELECTOR_VALIDATION . '$/', $selector);
+        return (bool)preg_match('/^' . self::SELECTOR_VALIDATION . '$/', $selector);
     }
 
     /**
