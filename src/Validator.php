@@ -426,6 +426,7 @@ class Validator
                         ];
                         throw new ValidatorException();
                     }
+
                     //Validate the signature
                     $validationResult = self::validateSignature(
                         $publicKey['p'],

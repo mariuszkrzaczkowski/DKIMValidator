@@ -23,7 +23,7 @@ class TestingKeys
     }
 
     /**
-     * Get a public key in a format usable in DNS.
+     * Get a public key in the format expected from DNS.
      *
      * @param bool $single Whether to return a single record or broken into chunks
      *

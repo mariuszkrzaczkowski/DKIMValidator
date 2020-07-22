@@ -693,7 +693,7 @@ it(
 )->throws(DNSException::class);
 
 it(
-    'refuses to canonicalize and empty set of headers',
+    'refuses to canonicalize an empty set of headers',
     function () {
         $validator = new Validator(new Message("test:test\r\n\r\ntest"), new TestingResolver());
         $validator->canonicalizeHeaders([]);
