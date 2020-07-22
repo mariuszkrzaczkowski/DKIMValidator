@@ -657,54 +657,54 @@ class Validator
     }
 
     /**
-     * Check whether a signed string matches its key.
+     * Check whether a signed string matches its signature.
      *
-     * @param string $publicKey
-     * @param string $signature
-     * @param string $signedString
-     * @param string $hashAlgo Any of the algos returned by openssl_get_md_methods()
+     * @param string $publicKeyB64 A base64-encoded public key obtained from DNS
+     * @param string $signatureB64 A base64-encoded openssl signature, as found in a DKIM 'b' tag
+     * @param string $text The message to verify; usually a canonicalized email message
+     * @param string $hashAlgo Any of the algorithms returned by openssl_get_md_methods(), but must be supported by DKIM; usually 'sha256'
      *
      * @return bool
      *
      * @throws DKIMException
      */
     public static function validateSignature(
-        string $publicKey,
-        string $signature,
-        string $signedString,
+        string $publicKeyB64,
+        string $signatureB64,
+        string $text,
         string $hashAlgo = self::DEFAULT_HASH_FUNCTION
     ): bool {
-        //Convert key back into PEM format
-        $key = sprintf(
-            "-----BEGIN PUBLIC KEY-----\n%s\n-----END PUBLIC KEY-----",
-            trim(chunk_split($publicKey, 64, self::LF))
-        );
+        //Convert key from DNS format into PEM format if its not already wrapped
+        $key = $publicKeyB64;
+        if (strpos($publicKeyB64, '-----BEGIN PUBLIC KEY-----') !== 0) {
+            $key = sprintf(
+                "-----BEGIN PUBLIC KEY-----\n%s\n-----END PUBLIC KEY-----\n",
+                trim(chunk_split($publicKeyB64, 64, self::LF))
+            );
+        }
 
-        $decodedSignature = base64_decode($signature, true);
-        if ($decodedSignature === false) {
+        $signature = base64_decode($signatureB64, true);
+        if ($signature === false) {
             throw new DKIMException('DKIM signature contains invalid base64 data');
         }
         try {
-            $verified = openssl_verify($signedString, $decodedSignature, $key, $hashAlgo);
+            $verified = openssl_verify($text, $signature, $key, $hashAlgo);
         } catch (\ErrorException $e) {
             //Things like incorrectly formatted keys will trigger this
             throw new DKIMException('Could not verify signature: ' . $e->getMessage());
         }
-        switch ($verified) {
-            case 1:
-                return true;
-            case 0:
-                return false;
-            case -1:
-                $message = '';
-                //There may be multiple errors; fetch them all
-                while ($error = openssl_error_string() !== false) {
-                    $message .= $error . self::LF;
-                }
-                throw new DKIMException('OpenSSL verify error: ' . $message);
+        if ($verified === 1) {
+            return true;
+        }
+        if ($verified === -1) {
+            $message = '';
+            //There may be multiple errors; fetch them all
+            while ($error = openssl_error_string() !== false) {
+                $message .= $error . self::LF;
+            }
+            throw new DKIMException('OpenSSL verify error: ' . $message);
         }
 
-        //Code will never get here!
         return false;
     }
 

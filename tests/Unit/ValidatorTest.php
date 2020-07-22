@@ -6,6 +6,7 @@ use PHPMailer\DKIMValidator\DKIMException;
 use PHPMailer\DKIMValidator\DNSException;
 use PHPMailer\DKIMValidator\Header;
 use PHPMailer\DKIMValidator\Message;
+use PHPMailer\DKIMValidator\Tests\TestingKeys;
 use PHPMailer\DKIMValidator\Tests\TestingResolver;
 use PHPMailer\DKIMValidator\Validator;
 use PHPMailer\DKIMValidator\ValidatorException;
@@ -759,13 +760,25 @@ it(
 )->throws(DKIMException::class);
 
 it(
-    'detects an invalid signature',
+    'detects invalid base64 encoding of a signature',
     function () {
         Validator::validateSignature(
             'abc',
             '%%%',
-            '',
-            ''
+            'goodbye',
+            Validator::DEFAULT_HASH_FUNCTION
+        );
+    }
+)->throws(DKIMException::class);
+
+it(
+    'detects an invalid signature',
+    function () {
+        Validator::validateSignature(
+            'abc',
+            base64_encode('123'),
+            'hello',
+            Validator::DEFAULT_HASH_FUNCTION
         );
     }
 )->throws(DKIMException::class);
@@ -795,5 +808,32 @@ it(
     function () {
         $tags = Validator::extractDKIMTags(new Header('DKIM-Signature: s=phpmailer; x=true;'));
         assertEquals(['s' => 'phpmailer', 'x' => 'true'], $tags);
+    }
+);
+
+it(
+    'verifies signatures correctly',
+    function () {
+        //Sign an arbitrary message using the DKIM keys
+        $private = TestingKeys::getPrivateKey();
+        $text = 'who ate my email?';
+        $signature = '';
+        //Create a signature (by reference) using the private key
+        $signedok = openssl_sign($text, $signature, $private, Validator::DEFAULT_HASH_FUNCTION);
+
+        assertTrue($signedok);
+        assertNotEmpty($signature);
+
+        //Create a placeholder instance so we can use its signature validator
+        $validator = new Validator(new Message("test:test\r\n\r\ntest"), new TestingResolver());
+        $keys = $validator->fetchPublicKeys('example.com', 'phpmailer');
+        $isValid = Validator::validateSignature(
+            $keys[0]['p'],
+            base64_encode($signature),
+            $text
+        );
+
+        //Check that the signature matches
+        assertTrue($isValid);
     }
 );
