@@ -29,9 +29,17 @@ it(
 );
 
 it(
-    'invalid params',
+    'returns an empty array for an empty domain',
     function () {
         $records = Resolver::getTextRecords('');
+        assertEquals([], $records);
+    }
+);
+
+it(
+    'returns an empty array for an invalid domain',
+    function () {
+        $records = Resolver::getTextRecords('asdfg%hjkl._domainkey.example.com');
         assertEquals([], $records);
     }
 );
