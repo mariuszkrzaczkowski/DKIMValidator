@@ -90,7 +90,13 @@ it(
 it(
     'validates a message',
     function () {
-        $validator = new Validator(new Message(file_get_contents(__DIR__ . '/../message.eml')));
+        $messageFile = __DIR__ . '/../message.eml';
+        if (!file_exists($messageFile)) {
+            //Skip this test is we don't have an external message file to validate
+            assertTrue(true);
+            return;
+        }
+        $validator = new Validator(new Message(file_get_contents($messageFile)));
         $validation = $validator->validate();
         assertArrayHasKey('valid', $validation);
         assertFalse($validation['valid']);
@@ -98,6 +104,7 @@ it(
         assertFalse($validation);
     }
 );
+
 it(
     'detects a missing required selector DKIM tag',
     function () {
