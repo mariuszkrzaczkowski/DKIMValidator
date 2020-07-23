@@ -97,16 +97,20 @@ class Message
      *
      * @param string $headers
      *
-     * @return array
+     * @return Header[]
      * @throws HeaderException
      */
     protected function parseHeaders(string $headers): array
     {
         $matches = [];
-        preg_match_all('/(^(?:[^ \t].*[\r\n]+(?:[ \t].*[\r\n]+)*))/m', $headers, $matches);
+        $resultCount = preg_match_all('/(^(?:[^ \t].*[\r\n]+(?:[ \t].*[\r\n]+)*))/m', $headers, $matches);
+        if ($resultCount === false || $resultCount === 0 || ! isset($matches[0])) {
+            return [];
+        }
         $parsedHeaders = [];
+        /** @psalm-suppress MixedAssignment */
         foreach ($matches[0] as $match) {
-            $parsedHeaders[] = new Header($match);
+            $parsedHeaders[] = new Header((string)$match);
         }
 
         return $parsedHeaders;

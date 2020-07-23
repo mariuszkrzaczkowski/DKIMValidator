@@ -9,7 +9,7 @@ class Resolver implements ResolverInterface
     /**
      * @param string $domain
      *
-     * @return array
+     * @return string[]
      */
     public static function getTextRecords(string $domain): array
     {
@@ -23,7 +23,7 @@ class Resolver implements ResolverInterface
             foreach ($records as $record) {
                 //If the record was split into multiple strings, this element will contain a merged version
                 if (array_key_exists('txt', $record)) {
-                    $txtRecords[] = $record['txt'];
+                    $txtRecords[] = (string)$record['txt'];
                 }
             }
         }

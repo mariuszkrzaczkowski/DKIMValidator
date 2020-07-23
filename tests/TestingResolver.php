@@ -11,7 +11,7 @@ class TestingResolver implements ResolverInterface
      *
      * @param string $domain
      *
-     * @return array
+     * @return string[]
      */
     public static function getTextRecords(string $domain): array
     {

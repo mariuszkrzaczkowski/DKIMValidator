@@ -111,7 +111,7 @@ class Validator
             return false;
         }
 
-        return $analysis['valid'];
+        return (bool)$analysis['valid'];
     }
 
     /**
@@ -381,8 +381,11 @@ class Validator
                 ];
 
                 //Iterate over keys
+                /** @psalm-suppress MixedAssignment */
                 foreach ($this->publicKeys[$dkimTags['d']] as $keyIndex => $publicKey) {
                     //Confirm that pubkey version matches sig version (v=)
+                    /** @var string[] $publicKey */
+                    /** @psalm-suppress MixedArgument */
                     if (array_key_exists('v', $publicKey) && $publicKey['v'] !== 'DKIM' . $dkimTags['v']) {
                         $output[$signatureIndex]['analysis'][] = [
                             'status' => self::STATUS_FAIL_PERMANENT,
@@ -456,7 +459,7 @@ class Validator
 
                     //Validate the signature
                     $validationResult = self::validateSignature(
-                        $publicKey['p'],
+                        (string)$publicKey['p'],
                         $dkimTags['b'],
                         $canonicalHeaders,
                         $hash
@@ -533,6 +536,8 @@ class Validator
 
     /**
      * Fetch the public key(s) for a domain and selector.
+     * Return value is usually (records may vary or have optional tags) of the format:
+     * [['v' => <DKIM version>, 'k' => <keytype>, 'p' => <key>]*]
      *
      * @param string $domain
      * @param string $selector
@@ -558,10 +563,11 @@ class Validator
         $publicKeys = [];
         foreach ($textRecords as $textRecord) {
             //Dismantle the DKIM record
+            /** @var string $textRecord */
             $parts = explode(';', trim($textRecord));
             $record = [];
             foreach ($parts as $part) {
-                //Last record is empty if there is a trailing semicolon
+                //Last entry will be empty if there is a trailing semicolon, so skip it
                 $part = trim($part);
                 if ($part === '') {
                     continue;
@@ -713,7 +719,7 @@ class Validator
      *
      * @param Header $header
      *
-     * @return array
+     * @return string[]
      */
     public static function extractDKIMTags(Header $header): array
     {
