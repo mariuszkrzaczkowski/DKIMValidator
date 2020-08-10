@@ -78,7 +78,7 @@ class ValidationResult
      *
      * @param string $domain
      */
-    public function setDomain(string $domain)
+    public function setDomain(string $domain): void
     {
         $this->domain = $domain;
     }
@@ -88,7 +88,7 @@ class ValidationResult
      *
      * @param string $selector
      */
-    public function setSelector(string $selector)
+    public function setSelector(string $selector): void
     {
         $this->selector = $selector;
     }
