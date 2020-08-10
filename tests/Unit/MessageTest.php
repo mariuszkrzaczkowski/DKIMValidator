@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use PHPMailer\DKIMValidator\HeaderException;
 use PHPMailer\DKIMValidator\Message;
 
 it(

@@ -681,7 +681,8 @@ class Validator
      * @param string $publicKeyB64 A base64-encoded public key obtained from DNS
      * @param string $signatureB64 A base64-encoded openssl signature, as found in a DKIM 'b' tag
      * @param string $text The message to verify; usually a canonicalized email message
-     * @param string $hashAlgo Any of the algorithms returned by openssl_get_md_methods(), but must be supported by DKIM; usually 'sha256'
+     * @param string $hashAlgo Any of the algorithms returned by openssl_get_md_methods(),
+     *   but must be supported by DKIM; usually 'sha256'
      *
      * @return bool
      *

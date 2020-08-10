@@ -91,9 +91,10 @@ it(
     'validates a message',
     function () {
         $messageFile = __DIR__ . '/../message.eml';
-        if (!file_exists($messageFile)) {
+        if (! file_exists($messageFile)) {
             //Skip this test is we don't have an external message file to validate
             assertTrue(true);
+
             return;
         }
         $message = file_get_contents($messageFile);
