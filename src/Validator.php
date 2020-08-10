@@ -611,6 +611,19 @@ class Validator
     }
 
     /**
+     * Validate a domain name.
+     *
+     * @param string $domain
+     *
+     * @return bool
+     */
+    public static function validateDomain(string $domain): bool
+    {
+        //FILTER_FLAG_HOSTNAME may not be entirely correct as it permits _ in hostnames, though that's needed for DKIM
+        return (bool)filter_var($domain, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME);
+    }
+
+    /**
      * Canonicalize message headers using either `relaxed` or `simple` algorithms.
      * The relaxed algorithm is more complex, but is more robust
      *
