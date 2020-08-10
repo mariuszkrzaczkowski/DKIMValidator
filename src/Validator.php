@@ -111,28 +111,26 @@ class Validator
             return false;
         }
 
-        return (bool)$analysis['valid'];
+        return (bool)$analysis->isValid();
     }
 
     /**
      * Validate all DKIM signatures found in the message.
      *
-     * @return array
+     * @return ValidationResults
      *
      * @throws DKIMException|HeaderException
      */
-    public function validate(): array
+    public function validate(): ValidationResults
     {
-        $valid = false;
-        $output = [];
+        $validationResults = new ValidationResults();
 
         //Find all DKIM signatures amongst the headers (there may be more than one)
         $signatures = $this->getDKIMHeaders();
 
         //Validate each signature in turn
         foreach ($signatures as $signatureIndex => $signature) {
-            //Let's be optimistic!
-            $output[$signatureIndex]['valid'] = true;
+            $validationResult = new ValidationResult();
             try {
                 //Split into tags
                 $dkimTags = self::extractDKIMTags($signature);
@@ -142,12 +140,10 @@ class Validator
                 $required = ['v', 'a', 'b', 'bh', 'd', 'h', 's'];
                 foreach ($required as $tagIndex) {
                     if (! array_key_exists($tagIndex, $dkimTags)) {
-                        $output[$signatureIndex]['analysis'][] = [
-                            'status' => self::STATUS_FAIL_PERMANENT,
-                            'reason' => "DKIM signature missing required tag: ${tagIndex}",
-                        ];
-                        throw new ValidatorException();
+                        throw new ValidatorException("DKIM signature missing required tag: ${tagIndex}");
                     }
+                    $validationResult->addPassedTest("Required DKIM tag present: ${tagIndex}");
+                }
 
                     $output[$signatureIndex]['analysis'][] = [
                         'status' => self::STATUS_SUCCESS_INFO,
@@ -157,45 +153,26 @@ class Validator
 
                 //Validate DKIM version number
                 if (array_key_exists('v', $dkimTags) && (int)$dkimTags['v'] !== 1) {
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_FAIL_PERMANENT,
-                        'reason' => "Incompatible DKIM version: ${dkimTags['v']}",
-                    ];
-                    throw new ValidatorException();
+                    throw new ValidatorException("Incompatible DKIM version: ${dkimTags['v']}");
                 }
-
-                $output[$signatureIndex]['analysis'][] = [
-                    'status' => self::STATUS_SUCCESS_INFO,
-                    'reason' => "Compatible DKIM version: ${dkimTags['v']}",
-                ];
+                $validationResult->addPassedTest("Compatible DKIM version: ${dkimTags['v']}");
 
                 //Validate canonicalization algorithms for header and body
-                [$headerCA, $bodyCA] = explode('/', $dkimTags['c']);
+                [$headerCA, $bodyCA] = explode('/', $dkimTags['c'], 2);
                 if (
                     $headerCA !== self::CANONICALIZATION_HEADERS_RELAXED &&
                     $headerCA !== self::CANONICALIZATION_HEADERS_SIMPLE
                 ) {
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_FAIL_PERMANENT,
-                        'reason' => "Unknown header canonicalization algorithm: ${headerCA}",
-                    ];
-                    throw new ValidatorException();
+                    throw new ValidatorException("Unknown header canonicalization algorithm: ${headerCA}");
                 }
+                $validationResult->addPassedTest("Valid header canonicalization algorithm: ${headerCA}");
                 if (
                     $bodyCA !== self::CANONICALIZATION_BODY_RELAXED &&
                     $bodyCA !== self::CANONICALIZATION_BODY_SIMPLE
                 ) {
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_FAIL_PERMANENT,
-                        'reason' => "Unknown body canonicalization algorithm: ${bodyCA}",
-                    ];
-                    throw new ValidatorException();
+                    throw new ValidatorException("Unknown body canonicalization algorithm: ${bodyCA}");
                 }
-
-                $output[$signatureIndex]['analysis'][] = [
-                    'status' => self::STATUS_SUCCESS_INFO,
-                    'reason' => "Valid body canonicalization algorithm: ${bodyCA}",
-                ];
+                $validationResult->addPassedTest("Valid body canonicalization algorithm: ${bodyCA}");
 
                 //Canonicalize body
                 $canonicalBody = $this->canonicalizeBody($bodyCA);
@@ -207,82 +184,47 @@ class Validator
                 if (array_key_exists('l', $dkimTags)) {
                     $bodyLength = strlen($canonicalBody);
                     if ((int)$dkimTags['l'] > $bodyLength) {
-                        $output[$signatureIndex]['analysis'][] = [
-                            'status' => self::STATUS_FAIL_PERMANENT,
-                            'reason' => 'Body too short: ' . $dkimTags['l'] . '/' . $bodyLength,
-                        ];
-                        throw new ValidatorException();
+                        throw new ValidatorException('Body too short: ' . $dkimTags['l'] . '/' . $bodyLength);
                     }
-
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_SUCCESS_INFO,
-                        'reason' => "Optional body length tag is present and valid: ${bodyLength}",
-                    ];
+                    $validationResult->addPassedTest("Optional body length tag is present and valid: ${bodyLength}");
                 }
 
                 //Ensure the optional user identifier ends in the signing domain
                 if (array_key_exists('i', $dkimTags)) {
                     if (substr($dkimTags['i'], -strlen($dkimTags['d'])) !== $dkimTags['d']) {
-                        $output[$signatureIndex]['analysis'][] = [
-                            'status' => self::STATUS_FAIL_PERMANENT,
-                            'reason' => 'Agent or user identifier does not match domain: ' . $dkimTags['i'],
-                        ];
-                        throw new ValidatorException();
+                        throw new ValidatorException(
+                            'Agent or user identifier does not match domain: ' . $dkimTags['i']
+                        );
                     }
-
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_SUCCESS_INFO,
-                        'reason' => 'Agent or user identifier matches domain: ' . $dkimTags['i'],
-                    ];
+                    $validationResult->addPassedTest('Agent or user identifier matches domain: ' . $dkimTags['i']);
                 }
 
                 //Ensure the signature includes the From field
                 if (array_key_exists('h', $dkimTags)) {
                     if (stripos($dkimTags['h'], 'From') === false) {
-                        $output[$signatureIndex]['analysis'][] = [
-                            'status' => self::STATUS_FAIL_PERMANENT,
-                            'reason' => 'From header not included in signed header list: ' . $dkimTags['h'],
-                        ];
-                        throw new ValidatorException();
+                        throw new ValidatorException(
+                            'From header not included in signed header list: ' . $dkimTags['h']
+                        );
                     }
-
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_SUCCESS_INFO,
-                        'reason' => 'From header is included in signed header list.',
-                    ];
+                    $validationResult->addPassedTest('From header is included in signed header list.');
                 }
 
                 //Validate and check expiry time
                 if (array_key_exists('x', $dkimTags)) {
                     if ((int)$dkimTags['x'] < time()) {
-                        $output[$signatureIndex]['analysis'][] = [
-                            'status' => self::STATUS_FAIL_PERMANENT,
-                            'reason' => 'Signature has expired.',
-                        ];
-                        throw new ValidatorException();
+                        throw new ValidatorException('Signature has expired.');
                     }
-
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_SUCCESS_INFO,
-                        'reason' => 'Signature has not expired',
-                    ];
+                    $validationResult->addPassedTest('Signature has not expired');
                     if ((int)$dkimTags['x'] < (int)$dkimTags['t']) {
-                        $output[$signatureIndex]['analysis'][] = [
-                            'status' => self::STATUS_FAIL_PERMANENT,
-                            'reason' => 'Expiry time is before signature time.',
-                        ];
-                        throw new ValidatorException();
+                        throw new ValidatorException('Expiry time is before signature time.');
                     }
-
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_SUCCESS_INFO,
-                        'reason' => 'Expiry time is after signature time.',
-                    ];
+                    $validationResult->addPassedTest('Expiry time is after signature time.');
                 }
 
                 //The 'q' tag may be empty - add a default value if it is
                 if (! array_key_exists('q', $dkimTags) || $dkimTags['q'] === '') {
                     $dkimTags['q'] = 'dns/txt';
+                    $validationResult->addWarning('Added missing optional \'q\' tag.');
                 }
 
                 //Fetch public keys from DNS using the domain and selector from the signature
@@ -292,25 +234,17 @@ class Validator
                     try {
                         $dnsKeys = $this->fetchPublicKeys($dkimTags['d'], $dkimTags['s']);
                     } catch (ValidatorException $e) {
-                        $output[$signatureIndex]['analysis'][] = [
-                            'status' => self::STATUS_FAIL_TEMPORARY,
-                            'reason' => 'Invalid selector: ' . $dkimTags['s'] . ' for domain: ' . $dkimTags['d'],
-                        ];
-                        throw new ValidatorException();
+                        throw new ValidatorException(
+                            'Invalid selector: ' . $dkimTags['s'] . ' for domain: ' . $dkimTags['d']
+                        );
                     } catch (DNSException $e) {
-                        $output[$signatureIndex]['analysis'][] = [
-                            'status' => self::STATUS_FAIL_TEMPORARY,
-                            'reason' => 'Public key not found in DNS, skipping signature',
-                        ];
-                        throw new ValidatorException();
+                        throw new ValidatorException('Public key not found in DNS, skipping signature');
                     }
                     $this->publicKeys[$dkimTags['d']] = $dnsKeys;
                 } else {
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_FAIL_PERMANENT,
-                        'reason' => 'Public key unavailable (unknown q= query format), skipping signature',
-                    ];
-                    throw new ValidatorException();
+                    throw new ValidatorException(
+                        'Public key unavailable (unknown q= query format), skipping signature'
+                    );
                 }
 
                 //http://tools.ietf.org/html/rfc4871#section-6.1.3
@@ -344,21 +278,12 @@ class Validator
                     $alg = $matches[1];
                     $hash = $matches[2];
                 } else {
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_FAIL_PERMANENT,
-                        'reason' => '\'a\' tag uses an invalid signature algorithm specifier',
-                    ];
-                    throw new ValidatorException();
+                    throw new ValidatorException('\'a\' tag uses an invalid signature algorithm specifier');
                 }
 
                 # Check that the hash algorithm is available in openssl
                 if (! in_array($hash, openssl_get_md_methods(true), true)) {
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_FAIL_PERMANENT,
-                        'reason' => "Signature algorithm ${hash} is not available in" .
-                            " openssl",
-                    ];
-                    throw new ValidatorException();
+                    throw new ValidatorException("Signature algorithm ${hash} is not available in" . ' openssl');
                 }
 
                 //Canonicalize the headers
@@ -368,17 +293,9 @@ class Validator
                 $bodyHash = self::hashBody($canonicalBody, $hash);
 
                 if (! hash_equals($bodyHash, $dkimTags['bh'])) {
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_FAIL_PERMANENT,
-                        'reason' => 'Computed body hash does not match signature body hash',
-                    ];
-                    throw new ValidatorException();
+                    throw new ValidatorException('Computed body hash does not match signature body hash');
                 }
-
-                $output[$signatureIndex]['analysis'][] = [
-                    'status' => self::STATUS_SUCCESS_INFO,
-                    'reason' => 'Body hash matches signature.',
-                ];
+                $validationResult->addPassedTest('Body hash matches signature.');
 
                 //Iterate over keys
                 /** @psalm-suppress MixedAssignment */
@@ -387,111 +304,73 @@ class Validator
                     /** @var string[] $publicKey */
                     /** @psalm-suppress MixedArgument */
                     if (array_key_exists('v', $publicKey) && $publicKey['v'] !== 'DKIM' . $dkimTags['v']) {
-                        $output[$signatureIndex]['analysis'][] = [
-                            'status' => self::STATUS_FAIL_PERMANENT,
-                            'reason' => 'Public key version does not match signature' .
-                                " version (${dkimTags['d']} key #${keyIndex})",
-                        ];
-                        throw new ValidatorException();
+                        throw new ValidatorException(
+                            'Public key version does not match signature' .
+                            " version (${dkimTags['d']} key #${keyIndex})"
+                        );
                     }
-
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_SUCCESS_INFO,
-                        'reason' => 'Public key version matches signature.',
-                    ];
+                    $validationResult->addPassedTest('Public key version matches signature.');
 
                     //Confirm that published hash algorithm matches sig hash
                     //The h tag in DKIM DNS records is optional, and defaults to sha256
                     if (array_key_exists('h', $publicKey) && $publicKey['h'] !== $hash) {
-                        $output[$signatureIndex]['analysis'][] = [
-                            'status' => self::STATUS_FAIL_PERMANENT,
-                            'reason' => 'Public key hash algorithm does not match signature' .
-                                " hash algorithm (${dkimTags['d']} key #${keyIndex})",
-                        ];
-                        throw new ValidatorException();
+                        throw new ValidatorException(
+                            'Public key hash algorithm does not match signature' .
+                            " hash algorithm (${dkimTags['d']} key #${keyIndex})"
+                        );
                     }
-
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_SUCCESS_INFO,
-                        'reason' => 'Public key hash algorithm (' . $hash . ') matches signature.',
-                    ];
+                    $validationResult->addPassedTest('Public key hash algorithm (' . $hash . ') matches signature.');
 
                     //Confirm that the DNS key type matches the signature key type
                     if (array_key_exists('k', $publicKey) && $publicKey['k'] !== $alg) {
-                        $output[$signatureIndex]['analysis'][] = [
-                            'status' => self::STATUS_FAIL_PERMANENT,
-                            'reason' => 'Public key type does not match signature' .
-                                " key type (${dkimTags['d']} key #${keyIndex})",
-                        ];
-                        throw new ValidatorException();
+                        throw new ValidatorException(
+                            'Public key type does not match signature' .
+                            " key type (${dkimTags['d']} key #${keyIndex})"
+                        );
                     }
-
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_SUCCESS_INFO,
-                        'reason' => 'Public key type(' . $alg . ') matches signature.',
-                    ];
+                    $validationResult->addPassedTest('Public key type(' . $alg . ') matches signature.');
 
                     //Ensure the service type tag allows email usage
                     if (array_key_exists('s', $publicKey) && $publicKey['s'] !== '*' && $publicKey['s'] !== 'email') {
-                        $output[$signatureIndex]['analysis'][] = [
-                            'status' => self::STATUS_FAIL_PERMANENT,
-                            'reason' => 'Public key service type does not permit email usage' .
-                                " (${dkimTags['d']} key #${keyIndex}) ${publicKey['s']}",
-                        ];
-                        throw new ValidatorException();
+                        throw new ValidatorException(
+                            'Public key service type does not permit email usage' .
+                            " (${dkimTags['d']} key #${keyIndex}) ${publicKey['s']}"
+                        );
                     }
-
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_SUCCESS_INFO,
-                        'reason' => 'Public key service type permits email usage.',
-                    ];
+                    $validationResult->addPassedTest('Public key service type permits email usage.');
 
                     //@TODO check t= flags
 
                     // Same as the earlier check for the DKIM a tag, but for the DNS record
                     if (! in_array($hash, openssl_get_md_methods(true), true)) {
-                        $output[$signatureIndex]['analysis'][] = [
-                            'status' => self::STATUS_FAIL_PERMANENT,
-                            'reason' => "Signature algorithm ${hash} is not available in openssl, key #${keyIndex}",
-                        ];
-                        throw new ValidatorException();
+                        throw new ValidatorException(
+                            "Signature algorithm ${hash} is not available in openssl, key #${keyIndex}"
+                        );
                     }
 
                     //Validate the signature
-                    $validationResult = self::validateSignature(
+                    $signatureResult = self::validateSignature(
                         (string)$publicKey['p'],
                         $dkimTags['b'],
                         $canonicalHeaders,
                         $hash
                     );
 
-                    if (! $validationResult) {
-                        $output[$signatureIndex]['analysis'][] = [
-                            'status' => self::STATUS_FAIL_PERMANENT,
-                            'reason' => 'DKIM signature did not verify ' .
-                                "(${dkimTags['d']}/${dkimTags['s']} key #${keyIndex})",
-                        ];
-                        throw new ValidatorException();
+                    if (! $signatureResult) {
+                        throw new ValidatorException(
+                            'DKIM signature did not verify ' .
+                            "(${dkimTags['d']}/${dkimTags['s']} key #${keyIndex})"
+                        );
                     }
-
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_SUCCESS_INFO,
-                        'reason' => 'DKIM signature verified successfully!',
-                    ];
+                    $validationResult->addPassedTest('DKIM signature verified successfully!');
                 }
             } catch (ValidatorException $e) {
-                $output[$signatureIndex]['valid'] = false;
+                $validationResult->addFailedTest($e->getMessage());
             }
-            //If *any* signature passes validation, the message is considered valid overall
-            if ($output[$signatureIndex]['valid']) {
-                $valid = true;
-            }
+            $validationResults->addResult($validationResult);
         }
 
-        return [
-            'valid'      => $valid,
-            'signatures' => $output,
-        ];
+        return $validationResults;
     }
 
     /**

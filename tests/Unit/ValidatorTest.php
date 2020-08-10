@@ -102,10 +102,11 @@ it(
             assertNotFalse($message);
             $validator = new Validator(new Message($message));
             $validation = $validator->validate();
-            assertArrayHasKey('valid', $validation);
-            assertFalse($validation['valid']);
-            $validation = $validator->validateBoolean();
-            assertFalse($validation);
+            assertFalse($validation->isValid());
+            $validationBool = $validator->validateBoolean();
+            assertFalse($validationBool);
+            assertNotEmpty($validation->getResults()[0]->getPassedTests());
+            assertNotEmpty($validation->getResults()[0]->getFailedTests());
         } else {
             assertFalse($message);
         }
@@ -137,8 +138,8 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertArrayHasKey('valid', $validation);
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
+
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -167,8 +168,7 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertArrayHasKey('valid', $validation);
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -197,8 +197,7 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertArrayHasKey('valid', $validation);
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -227,8 +226,7 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertArrayHasKey('valid', $validation);
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -257,8 +255,7 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertArrayHasKey('valid', $validation);
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -287,8 +284,10 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertArrayHasKey('valid', $validation);
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
+        //For coverage
+        assertEquals('example.com', $validation->getResults()[0]->getDomain());
+        assertEquals('phpmailer', $validation->getResults()[0]->getSelector());
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -317,8 +316,7 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertArrayHasKey('valid', $validation);
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -347,8 +345,7 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertArrayHasKey('valid', $validation);
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -377,7 +374,6 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertArrayHasKey('valid', $validation);
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -406,8 +402,7 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertArrayHasKey('valid', $validation);
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -436,7 +431,8 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertArrayHasKey('valid', $validation);
+        assertFalse($validation->isValid());
+        assertNotEmpty($validation->getResults()[0]->getWarnings());
     }
 );
 
@@ -464,7 +460,8 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertArrayHasKey('valid', $validation);
+        assertFalse($validation->isValid());
+        assertEmpty($validation->getResults()[0]->getWarnings());
     }
 );
 
@@ -492,8 +489,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertArrayHasKey('valid', $validation);
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
     }
 );
 
@@ -521,8 +517,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertArrayHasKey('valid', $validation);
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -552,7 +547,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
     }
 );
 
@@ -581,7 +576,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
     }
 );
 
@@ -610,7 +605,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
     }
 );
 
@@ -639,7 +634,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
     }
 );
 
@@ -668,7 +663,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
     }
 );
 
@@ -697,7 +692,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
     }
 );
 
@@ -726,7 +721,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertFalse($validation['valid']);
+        assertFalse($validation->isValid());
     }
 );
 
