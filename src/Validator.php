@@ -145,11 +145,19 @@ class Validator
                     $validationResult->addPassedTest("Required DKIM tag present: ${tagIndex}");
                 }
 
-                    $output[$signatureIndex]['analysis'][] = [
-                        'status' => self::STATUS_SUCCESS_INFO,
-                        'reason' => "Required DKIM tag present: ${tagIndex}",
-                    ];
+                //Validate the domain
+                if (! self::validateDomain($dkimTags['d'])) {
+                    throw new ValidatorException("Signing domain is invalid: ${dkimTags['d']}");
                 }
+                $validationResult->setDomain($dkimTags['d']);
+                $validationResult->addPassedTest("Signing domain is valid: ${dkimTags['d']}");
+
+                //Validate the selector
+                if (! self::validateSelector($dkimTags['s'])) {
+                    throw new ValidatorException("Signing selector is invalid: ${dkimTags['s']}");
+                }
+                $validationResult->setSelector($dkimTags['s']);
+                $validationResult->addPassedTest("Signing selector is valid: ${dkimTags['s']}");
 
                 //Validate DKIM version number
                 if (array_key_exists('v', $dkimTags) && (int)$dkimTags['v'] !== 1) {
