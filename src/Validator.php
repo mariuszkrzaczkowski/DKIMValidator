@@ -140,28 +140,28 @@ class Validator
                 $required = ['v', 'a', 'b', 'bh', 'd', 'h', 's'];
                 foreach ($required as $tagIndex) {
                     if (! array_key_exists($tagIndex, $dkimTags)) {
-                        throw new ValidatorException("DKIM signature missing required tag: ${tagIndex}");
+                        throw new ValidatorException("DKIM signature missing required tag: ${tagIndex}" . '.');
                     }
                     $validationResult->addPass("Required DKIM tag present: ${tagIndex}" . '.');
                 }
 
                 //Validate the domain
                 if (! self::validateDomain($dkimTags['d'])) {
-                    throw new ValidatorException("Signing domain is invalid: ${dkimTags['d']}");
+                    throw new ValidatorException("Signing domain is invalid: ${dkimTags['d']}" . '.');
                 }
                 $validationResult->setDomain($dkimTags['d']);
                 $validationResult->addPass("Signing domain is valid: ${dkimTags['d']}" . '.');
 
                 //Validate the selector
                 if (! self::validateSelector($dkimTags['s'])) {
-                    throw new ValidatorException("Signing selector is invalid: ${dkimTags['s']}");
+                    throw new ValidatorException("Signing selector is invalid: ${dkimTags['s']}" . '.');
                 }
                 $validationResult->setSelector($dkimTags['s']);
                 $validationResult->addPass("Signing selector is valid: ${dkimTags['s']}");
 
                 //Validate DKIM version number
                 if (array_key_exists('v', $dkimTags) && (int)$dkimTags['v'] !== 1) {
-                    throw new ValidatorException("Incompatible DKIM version: ${dkimTags['v']}");
+                    throw new ValidatorException("Incompatible DKIM version: ${dkimTags['v']}" . '.');
                 }
                 $validationResult->addPass("Compatible DKIM version: ${dkimTags['v']}" . '.');
 
@@ -171,14 +171,14 @@ class Validator
                     $headerCA !== self::CANONICALIZATION_HEADERS_RELAXED &&
                     $headerCA !== self::CANONICALIZATION_HEADERS_SIMPLE
                 ) {
-                    throw new ValidatorException("Unknown header canonicalization algorithm: ${headerCA}");
+                    throw new ValidatorException("Unknown header canonicalization algorithm: ${headerCA}" . '.');
                 }
                 $validationResult->addPass("Valid header canonicalization algorithm: ${headerCA}" . '.');
                 if (
                     $bodyCA !== self::CANONICALIZATION_BODY_RELAXED &&
                     $bodyCA !== self::CANONICALIZATION_BODY_SIMPLE
                 ) {
-                    throw new ValidatorException("Unknown body canonicalization algorithm: ${bodyCA}");
+                    throw new ValidatorException("Unknown body canonicalization algorithm: ${bodyCA}" . '.');
                 }
                 $validationResult->addPass("Valid body canonicalization algorithm: ${bodyCA}" . '.');
 
@@ -192,7 +192,7 @@ class Validator
                 if (array_key_exists('l', $dkimTags)) {
                     $bodyLength = strlen($canonicalBody);
                     if ((int)$dkimTags['l'] > $bodyLength) {
-                        throw new ValidatorException('Body too short: ' . $dkimTags['l'] . '/' . $bodyLength);
+                        throw new ValidatorException('Body too short: ' . $dkimTags['l'] . '/' . $bodyLength . '.');
                     }
                     $validationResult->addPass("Optional body length tag is present and valid: ${bodyLength}" . '.');
                 }
@@ -201,7 +201,7 @@ class Validator
                 if (array_key_exists('i', $dkimTags)) {
                     if (substr($dkimTags['i'], -strlen($dkimTags['d'])) !== $dkimTags['d']) {
                         throw new ValidatorException(
-                            'Agent or user identifier does not match domain: ' . $dkimTags['i']
+                            'Agent or user identifier does not match domain: ' . $dkimTags['i'] . '.'
                         );
                     }
                     $validationResult->addPass('Agent or user identifier matches domain: ' . $dkimTags['i'] . '.');
@@ -241,15 +241,15 @@ class Validator
                         $dnsKeys = $this->fetchPublicKeys($dkimTags['d'], $dkimTags['s']);
                     } catch (ValidatorException $e) {
                         throw new ValidatorException(
-                            'Invalid selector: ' . $dkimTags['s'] . ' for domain: ' . $dkimTags['d']
+                            'Invalid selector: ' . $dkimTags['s'] . ' for domain: ' . $dkimTags['d'] . '.'
                         );
                     } catch (DNSException $e) {
-                        throw new ValidatorException('Public key not found in DNS, skipping signature');
+                        throw new ValidatorException('Public key not found in DNS, skipping signature.');
                     }
                     $this->publicKeys[$dkimTags['d']] = $dnsKeys;
                 } else {
                     throw new ValidatorException(
-                        'Public key unavailable (unknown q= query format), skipping signature'
+                        'Public key unavailable (unknown q= query format), skipping signature.'
                     );
                 }
 
@@ -504,13 +504,13 @@ class Validator
      */
     public static function validateDomain(string $domain): bool
     {
-        //FILTER_FLAG_HOSTNAME may not be entirely correct as it permits _ in hostnames, though that's needed for DKIM
-        return (bool)filter_var($domain, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME);
+        //FILTER_FLAG_HOSTNAME can't be used because it denies using `_`, which is needed for DKIM
+        return (bool)filter_var($domain, FILTER_VALIDATE_DOMAIN);
     }
 
     /**
      * Canonicalize message headers using either `relaxed` or `simple` algorithms.
-     * The relaxed algorithm is more complex, but is more robust
+     * The relaxed algorithm applies more complex normalisation, but is more robust as a result
      *
      * @see https://tools.ietf.org/html/rfc6376#section-3.4
      *

@@ -16,6 +16,7 @@ class Resolver implements ResolverInterface
         if (!Validator::validateDomain($domain)) {
             return [];
         }
+        //This automatically resolves CNAMEs for a domain if they are present
         $records = dns_get_record($domain, DNS_TXT);
         $txtRecords = [];
         if ($records !== false) {

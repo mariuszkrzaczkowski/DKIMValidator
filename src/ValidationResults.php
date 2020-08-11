@@ -11,7 +11,6 @@ namespace PHPMailer\DKIMValidator;
  */
 class ValidationResults
 {
-
     /**
      * @var bool Whether the message has passed DKIM validation overall
      */
