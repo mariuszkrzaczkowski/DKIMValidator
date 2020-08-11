@@ -39,7 +39,7 @@ it(
 it(
     'returns an empty array for an invalid domain',
     function () {
-        $records = Resolver::getTextRecords('asdfg%hjkl._domainkey.example.com');
+        $records = Resolver::getTextRecords('.asdfghjkl._domainkey.example.com');
         assertEquals([], $records);
     }
 );
