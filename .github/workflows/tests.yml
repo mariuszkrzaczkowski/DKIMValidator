@@ -35,8 +35,11 @@ jobs:
       - name: Install Composer dependencies
         run: composer update --${{ matrix.dependency-version }} --no-interaction --prefer-dist
 
-      - name: Unit Tests
+      - name: Pest Unit Tests
         run: vendor/bin/pest --colors=always --exclude-group=integration
 
-      - name: Type Checks
+      - name: PHPStan Type Checks
         run: vendor/bin/phpstan analyse --ansi
+
+      - name: Psalm Type Tests
+        run: ./vendor/bin/psalm --shepherd -c psalm.xml
