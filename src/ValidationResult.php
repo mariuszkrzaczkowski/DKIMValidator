@@ -9,53 +9,46 @@ class ValidationResult
     /**
      * @var bool Whether this validation has passed or not
      */
-    public $valid = true;
+    protected $valid = true;
 
     /**
      * @var string[] A list of tests that passed
      */
-    public $passedTests = [];
+    protected $passes = [];
 
     /**
      * @var string[] A list of tests that failed
      */
-    public $failedTests = [];
+    protected $fails = [];
 
     /**
      * @var string[] A list of tests that generated warnings (non-fatal errors)
      */
-    public $warnings = [];
+    protected $warnings = [];
 
     /**
      * @var string The domain that this test was run for
      */
-    public $domain = '';
+    protected $domain = '';
 
     /**
      * @var string The DKIM selector that was used for this validation
      */
-    public $selector = '';
-
-    /**
-     * ValidationResult constructor.
-     */
-    public function __construct()
-    {
-    }
+    protected $selector = '';
 
     public function isValid(): bool
     {
         return $this->valid;
     }
 
-    public function getPassedTests(): array
+    public function getPasses(): array
     {
-        return $this->passedTests;
+        return $this->passes;
     }
 
-    public function getFailedTests(): array
+    public function getFails(): array
     {
-        return $this->failedTests;
+        return $this->fails;
     }
 
     public function getWarnings(): array
@@ -96,19 +89,19 @@ class ValidationResult
     /**
      * @param string $message
      */
-    public function addFailedTest(string $message): void
+    public function addFail(string $message): void
     {
         //If we failed a test, this validation is invalid overall
         $this->valid = false;
-        $this->failedTests[] = $message;
+        $this->fails[] = $message;
     }
 
     /**
      * @param string $message
      */
-    public function addPassedTest(string $message): void
+    public function addPass(string $message): void
     {
-        $this->passedTests[] = $message;
+        $this->passes[] = $message;
     }
 
     /**

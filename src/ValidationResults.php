@@ -15,12 +15,12 @@ class ValidationResults
     /**
      * @var bool Whether the message has passed DKIM validation overall
      */
-    public $valid = false;
+    protected $valid = false;
 
     /**
      * @var ValidationResult[] One result for each DKIM signature in a message
      */
-    public $results = [];
+    protected $results = [];
 
     /**
      * Add the results of validation of a single signature.

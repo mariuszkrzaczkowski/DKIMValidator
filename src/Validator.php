@@ -142,7 +142,7 @@ class Validator
                     if (! array_key_exists($tagIndex, $dkimTags)) {
                         throw new ValidatorException("DKIM signature missing required tag: ${tagIndex}");
                     }
-                    $validationResult->addPassedTest("Required DKIM tag present: ${tagIndex}");
+                    $validationResult->addPass("Required DKIM tag present: ${tagIndex}" . '.');
                 }
 
                 //Validate the domain
@@ -150,20 +150,20 @@ class Validator
                     throw new ValidatorException("Signing domain is invalid: ${dkimTags['d']}");
                 }
                 $validationResult->setDomain($dkimTags['d']);
-                $validationResult->addPassedTest("Signing domain is valid: ${dkimTags['d']}");
+                $validationResult->addPass("Signing domain is valid: ${dkimTags['d']}" . '.');
 
                 //Validate the selector
                 if (! self::validateSelector($dkimTags['s'])) {
                     throw new ValidatorException("Signing selector is invalid: ${dkimTags['s']}");
                 }
                 $validationResult->setSelector($dkimTags['s']);
-                $validationResult->addPassedTest("Signing selector is valid: ${dkimTags['s']}");
+                $validationResult->addPass("Signing selector is valid: ${dkimTags['s']}");
 
                 //Validate DKIM version number
                 if (array_key_exists('v', $dkimTags) && (int)$dkimTags['v'] !== 1) {
                     throw new ValidatorException("Incompatible DKIM version: ${dkimTags['v']}");
                 }
-                $validationResult->addPassedTest("Compatible DKIM version: ${dkimTags['v']}");
+                $validationResult->addPass("Compatible DKIM version: ${dkimTags['v']}" . '.');
 
                 //Validate canonicalization algorithms for header and body
                 [$headerCA, $bodyCA] = explode('/', $dkimTags['c'], 2);
@@ -173,14 +173,14 @@ class Validator
                 ) {
                     throw new ValidatorException("Unknown header canonicalization algorithm: ${headerCA}");
                 }
-                $validationResult->addPassedTest("Valid header canonicalization algorithm: ${headerCA}");
+                $validationResult->addPass("Valid header canonicalization algorithm: ${headerCA}" . '.');
                 if (
                     $bodyCA !== self::CANONICALIZATION_BODY_RELAXED &&
                     $bodyCA !== self::CANONICALIZATION_BODY_SIMPLE
                 ) {
                     throw new ValidatorException("Unknown body canonicalization algorithm: ${bodyCA}");
                 }
-                $validationResult->addPassedTest("Valid body canonicalization algorithm: ${bodyCA}");
+                $validationResult->addPass("Valid body canonicalization algorithm: ${bodyCA}" . '.');
 
                 //Canonicalize body
                 $canonicalBody = $this->canonicalizeBody($bodyCA);
@@ -194,7 +194,7 @@ class Validator
                     if ((int)$dkimTags['l'] > $bodyLength) {
                         throw new ValidatorException('Body too short: ' . $dkimTags['l'] . '/' . $bodyLength);
                     }
-                    $validationResult->addPassedTest("Optional body length tag is present and valid: ${bodyLength}");
+                    $validationResult->addPass("Optional body length tag is present and valid: ${bodyLength}" . '.');
                 }
 
                 //Ensure the optional user identifier ends in the signing domain
@@ -204,29 +204,27 @@ class Validator
                             'Agent or user identifier does not match domain: ' . $dkimTags['i']
                         );
                     }
-                    $validationResult->addPassedTest('Agent or user identifier matches domain: ' . $dkimTags['i']);
+                    $validationResult->addPass('Agent or user identifier matches domain: ' . $dkimTags['i'] . '.');
                 }
 
                 //Ensure the signature includes the From field
-                if (array_key_exists('h', $dkimTags)) {
-                    if (stripos($dkimTags['h'], 'From') === false) {
-                        throw new ValidatorException(
-                            'From header not included in signed header list: ' . $dkimTags['h']
-                        );
-                    }
-                    $validationResult->addPassedTest('From header is included in signed header list.');
+                if (stripos($dkimTags['h'], 'From') === false) {
+                    throw new ValidatorException(
+                        'From header not included in signed header list: ' . $dkimTags['h'] . '.'
+                    );
                 }
+                $validationResult->addPass('From header is included in signed header list.');
 
                 //Validate and check expiry time
                 if (array_key_exists('x', $dkimTags)) {
                     if ((int)$dkimTags['x'] < time()) {
                         throw new ValidatorException('Signature has expired.');
                     }
-                    $validationResult->addPassedTest('Signature has not expired');
+                    $validationResult->addPass('Signature has not expired');
                     if ((int)$dkimTags['x'] < (int)$dkimTags['t']) {
                         throw new ValidatorException('Expiry time is before signature time.');
                     }
-                    $validationResult->addPassedTest('Expiry time is after signature time.');
+                    $validationResult->addPass('Expiry time is after signature time.');
                 }
 
                 //The 'q' tag may be empty - add a default value if it is
@@ -303,7 +301,7 @@ class Validator
                 if (! hash_equals($bodyHash, $dkimTags['bh'])) {
                     throw new ValidatorException('Computed body hash does not match signature body hash');
                 }
-                $validationResult->addPassedTest('Body hash matches signature.');
+                $validationResult->addPass('Body hash matches signature.');
 
                 //Iterate over keys
                 /** @psalm-suppress MixedAssignment */
@@ -317,7 +315,7 @@ class Validator
                             " version (${dkimTags['d']} key #${keyIndex})"
                         );
                     }
-                    $validationResult->addPassedTest('Public key version matches signature.');
+                    $validationResult->addPass('Public key version matches signature.');
 
                     //Confirm that published hash algorithm matches sig hash
                     //The h tag in DKIM DNS records is optional, and defaults to sha256
@@ -327,7 +325,7 @@ class Validator
                             " hash algorithm (${dkimTags['d']} key #${keyIndex})"
                         );
                     }
-                    $validationResult->addPassedTest('Public key hash algorithm (' . $hash . ') matches signature.');
+                    $validationResult->addPass('Public key hash algorithm (' . $hash . ') matches signature.');
 
                     //Confirm that the DNS key type matches the signature key type
                     if (array_key_exists('k', $publicKey) && $publicKey['k'] !== $alg) {
@@ -336,7 +334,7 @@ class Validator
                             " key type (${dkimTags['d']} key #${keyIndex})"
                         );
                     }
-                    $validationResult->addPassedTest('Public key type(' . $alg . ') matches signature.');
+                    $validationResult->addPass('Public key type(' . $alg . ') matches signature.');
 
                     //Ensure the service type tag allows email usage
                     if (array_key_exists('s', $publicKey) && $publicKey['s'] !== '*' && $publicKey['s'] !== 'email') {
@@ -345,7 +343,7 @@ class Validator
                             " (${dkimTags['d']} key #${keyIndex}) ${publicKey['s']}"
                         );
                     }
-                    $validationResult->addPassedTest('Public key service type permits email usage.');
+                    $validationResult->addPass('Public key service type permits email usage.');
 
                     //@TODO check t= flags
 
@@ -370,10 +368,10 @@ class Validator
                             "(${dkimTags['d']}/${dkimTags['s']} key #${keyIndex})"
                         );
                     }
-                    $validationResult->addPassedTest('DKIM signature verified successfully!');
+                    $validationResult->addPass('DKIM signature verified successfully!');
                 }
             } catch (ValidatorException $e) {
-                $validationResult->addFailedTest($e->getMessage());
+                $validationResult->addFail($e->getMessage());
             }
             $validationResults->addResult($validationResult);
         }
