@@ -105,8 +105,8 @@ it(
             assertFalse($validation->isValid());
             $validationBool = $validator->validateBoolean();
             assertFalse($validationBool);
-            assertNotEmpty($validation->getResults()[0]->getPassedTests());
-            assertNotEmpty($validation->getResults()[0]->getFailedTests());
+            assertNotEmpty($validation->getResults()[0]->getPasses());
+            assertNotEmpty($validation->getResults()[0]->getFails());
         } else {
             assertFalse($message);
         }
@@ -735,7 +735,7 @@ it(
 );
 
 it(
-    'validates a DKIM selector',
+    'detects an invalid selector in a DKIM record',
     function () {
         $validator = new Validator(new Message("test:test\r\n\r\ntest"), new TestingResolver());
         $validator->fetchPublicKeys('example.com', 'bad%selector');
@@ -743,7 +743,7 @@ it(
 )->throws(ValidatorException::class);
 
 it(
-    'ignores a trailing ; in a DKIM record',
+    'ignores a trailing semicolon in a DKIM record',
     function () {
         $validator = new Validator(new Message("test:test\r\n\r\ntest"), new TestingResolver());
         $keys = $validator->fetchPublicKeys('example.com', 'trailingsemi');
