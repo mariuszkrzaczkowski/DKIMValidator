@@ -43,6 +43,17 @@ it(
 );
 
 it(
+    'rejects a message with no DKIM signatures',
+    function () {
+        //Examples from https://tools.ietf.org/html/rfc6376#section-3.4.5
+        $rawMessage = "A: X\r\nB : Y\t\r\n\tZ  \r\n\r\n C \r\nD \t E\r\n\r\n\r\n";
+        $m = new Validator(new Message($rawMessage));
+        $results = $m->validate();
+        expect($results->getResults()[0]->getFails())->toHaveCount(1);
+    }
+);
+
+it(
     'extracts DKIM tags from a signature header correctly',
     function () {
         $header = new Header(

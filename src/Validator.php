@@ -128,6 +128,12 @@ class Validator
         //Find all DKIM signatures amongst the headers (there may be more than one)
         $signatures = $this->getDKIMHeaders();
 
+        if (empty($signatures)) {
+            $validationResult = new ValidationResult();
+            $validationResult->addFail('Message does not contain a DKIM signature.');
+            $validationResults->addResult($validationResult);
+            return $validationResults;
+        }
         //Validate each signature in turn
         foreach ($signatures as $signatureIndex => $signature) {
             $validationResult = new ValidationResult();
