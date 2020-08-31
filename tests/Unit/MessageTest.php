@@ -22,8 +22,8 @@ it(
     'splits a message into headers and body',
     function () {
         $message = new Message("A: X\r\nB : Y\t\r\n\tZ  \r\n\r\n C \r\nD \t E\r\n\r\n\r\n");
-        assertEquals("A: X\r\nB : Y\t\r\n\tZ  \r\n", $message->getRawHeaders());
-        assertEquals(" C \r\nD \t E\r\n\r\n\r\n", $message->getBody());
+        expect($message->getRawHeaders())->toEqual("A: X\r\nB : Y\t\r\n\tZ  \r\n");
+        expect($message->getBody())->toEqual(" C \r\nD \t E\r\n\r\n\r\n");
     }
 );
 
@@ -38,19 +38,19 @@ it(
             "A: X\r\nB : Y\t\r\n\tZ  \r\nQ1: $qencoded\r\nQ2: $bencoded\r\n\r\n C \r\nD \t E\r\n\r\n\r\n"
         );
         $headers = $message->getHeaders();
-        assertEquals("A: X\r\n", $headers[0]->getRaw());
-        assertEquals('A', $headers[0]->getLabel());
-        assertEquals('a', $headers[0]->getLowerLabel());
-        assertEquals('X', $headers[0]->getValue());
-        assertEquals("B : Y\t\r\n\tZ  \r\n", $headers[1]->getRaw());
-        assertEquals('B', $headers[1]->getLabel());
-        assertEquals('b', $headers[1]->getLowerLabel());
+        expect($headers[0]->getRaw())->toEqual("A: X\r\n");
+        expect($headers[0]->getLabel())->toEqual('A');
+        expect($headers[0]->getLowerLabel())->toEqual('a');
+        expect($headers[0]->getValue())->toEqual('X');
+        expect($headers[1]->getRaw())->toEqual("B : Y\t\r\n\tZ  \r\n");
+        expect($headers[1]->getLabel())->toEqual('B');
+        expect($headers[1]->getLowerLabel())->toEqual('b');
         //Note that this gains a space before the Z due to unfolding
-        assertEquals("Y\t Z  ", $headers[1]->getValue());
-        assertEquals($qencoded, $headers[2]->getRawValue());
-        assertEquals($utf8, $headers[2]->getValue());
-        assertEquals($bencoded, $headers[3]->getRawValue());
-        assertEquals($utf8, $headers[3]->getValue());
+        expect($headers[1]->getValue())->toEqual("Y\t Z  ");
+        expect($headers[2]->getRawValue())->toEqual($qencoded);
+        expect($headers[2]->getValue())->toEqual($utf8);
+        expect($headers[3]->getRawValue())->toEqual($bencoded);
+        expect($headers[3]->getValue())->toEqual($utf8);
     }
 );
 
@@ -61,11 +61,11 @@ it(
             "A: X\r\nB : Y\t\r\n\tZ  \r\nB:P\r\n\r\n C \r\nD \t E\r\n\r\n\r\n"
         );
         $headers = $message->getHeadersNamed('A');
-        assertCount(1, $headers);
-        assertEquals('X', $headers[0]->getValue());
-        assertEquals('A', $headers[0]->getLabel());
+        expect($headers)->toHaveCount(1);
+        expect($headers[0]->getValue())->toEqual('X');
+        expect($headers[0]->getLabel())->toEqual('A');
         $headers = $message->getHeadersNamed('B');
-        assertCount(2, $headers);
+        expect($headers)->toHaveCount(2);
     }
 );
 
@@ -80,7 +80,7 @@ it(
         $method = $reflector->getMethod('parseHeaders');
         $method->setAccessible(true);
         $result = $method->invokeArgs($message, ['x']);
-        assertIsArray($result);
-        assertCount(0, $result);
+        expect($result)->tobeArray();
+        expect($result)->toHaveCount(0);
     }
 );

@@ -35,10 +35,10 @@ it(
         $sb = $m->canonicalizeBody(
             Validator::CANONICALIZATION_BODY_SIMPLE
         );
-        assertEquals($relaxedHeader, $rh);
-        assertEquals($relaxedBody, $rb);
-        assertEquals($simpleHeader, $sh);
-        assertEquals($simpleBody, $sb);
+        expect($rh)->toEqual($relaxedHeader);
+        expect($rb)->toEqual($relaxedBody);
+        expect($sh)->toEqual($simpleHeader);
+        expect($sb)->toEqual($simpleBody);
     }
 );
 
@@ -58,24 +58,23 @@ it(
             " Rh7Z0ZEl+n4fqoyrTctR8ZEimwwd+xFOtx1hB9KgjW+JVcdTVQ=="
         );
         $tags = Validator::extractDKIMTags($header);
-        assertEquals('rsa-sha256', $tags['a']);
-        assertEquals(
+        expect($tags['a'])->toEqual('rsa-sha256');
+        expect($tags['b'])->toEqual(
             'ljWj1co9L6sMrXJ1yBwJ771dnjvVKZN3i97Q/QB0lGQf43FPdautceMsiu3M132QopX63Osqp' .
             'T1Oz40T9EMONwzCpzIMKKB/tNjDe5qw+evPjf/5mAaiVpIevh1P377t/K0y0nRmCaPbfa0sbmeoF' .
             'MSapHqTbf2phVJOCo7ejp3laovXSOhQoLZQrnCCW8LnqibtSoAO24ryr+B045XyBIcGPQkIWnRd0' .
             '43/Onv9ACRzau3F80gszR/86grpUwmZ88wHTL8R6g/pqz2eExQNNRmkFaVkwFG0vT5oRh7Z0ZEl+' .
-            'n4fqoyrTctR8ZEimwwd+xFOtx1hB9KgjW+JVcdTVQ==',
-            $tags['b']
+            'n4fqoyrTctR8ZEimwwd+xFOtx1hB9KgjW+JVcdTVQ=='
         );
-        assertEquals('g3zLYH4xKxcPrHOD18z9YfpQcnk/GaJedfustWU5uGs=', $tags['bh']);
-        assertEquals('relaxed/simple', $tags['c']);
-        assertEquals('example.com', $tags['d']);
-        assertEquals('Date:To:From:Subject:Message-ID:X-Mailer:Content-Type', $tags['h']);
-        assertEquals('6', $tags['l']);
-        assertEquals('dns/txt', $tags['q']);
-        assertEquals('phpmailer', $tags['s']);
-        assertEquals('1570645905', $tags['t']);
-        assertEquals('1', $tags['v']);
+        expect($tags['bh'])->toEqual('g3zLYH4xKxcPrHOD18z9YfpQcnk/GaJedfustWU5uGs=');
+        expect($tags['c'])->toEqual('relaxed/simple');
+        expect($tags['d'])->toEqual('example.com');
+        expect($tags['h'])->toEqual('Date:To:From:Subject:Message-ID:X-Mailer:Content-Type');
+        expect($tags['l'])->toEqual('6');
+        expect($tags['q'])->toEqual('dns/txt');
+        expect($tags['s'])->toEqual('phpmailer');
+        expect($tags['t'])->toEqual('1570645905');
+        expect($tags['v'])->toEqual('1');
     }
 );
 
@@ -110,7 +109,7 @@ it(
             "test";
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertEquals('Signing domain is invalid: .example.com.', $validation->getResults()[0]->getFails()[0]);
+        expect($validation->getResults()[0]->getFails()[0])->toEqual('Signing domain is invalid: .example.com.');
     }
 );
 
@@ -137,7 +136,7 @@ it(
             "test";
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertEquals('Signing selector is invalid: .phpmailer.', $validation->getResults()[0]->getFails()[0]);
+        expect($validation->getResults()[0]->getFails()[0])->toEqual('Signing selector is invalid: .phpmailer.');
     }
 );
 
@@ -146,23 +145,23 @@ it(
     function () {
         $messageFile = __DIR__ . '/../message.eml';
         if (! file_exists($messageFile)) {
-            //Skip this test is we don't have an external message file to validate
-            assertTrue(true);
+            //Make a dummy assertion as we don't have an external message file to validate
+            expect(true)->toBeTrue();
 
             return;
         }
         $message = file_get_contents($messageFile);
         if ($message !== false) {
-            assertNotFalse($message);
+            expect($message)->not->toBeFalse();
             $validator = new Validator(new Message($message));
             $validation = $validator->validate();
-            assertFalse($validation->isValid());
+            expect($validation->isValid())->toBeFalse();
             $validationBool = $validator->validateBoolean();
-            assertFalse($validationBool);
-            assertNotEmpty($validation->getResults()[0]->getPasses());
-            assertNotEmpty($validation->getResults()[0]->getFails());
+            expect($validationBool)->toBeFalse();
+            expect($validation->getResults()[0]->getPasses())->not->toBeEmpty();
+            expect($validation->getResults()[0]->getFails())->not->toBeEmpty();
         } else {
-            assertFalse($message);
+            expect($message)->toBeFalse();
         }
     }
 );
@@ -192,7 +191,7 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
 
         throw new ValidatorException();
     }
@@ -222,7 +221,7 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -251,7 +250,7 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -280,7 +279,7 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -309,7 +308,7 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -338,10 +337,10 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
         //For coverage
-        assertEquals('example.com', $validation->getResults()[0]->getDomain());
-        assertEquals('phpmailer', $validation->getResults()[0]->getSelector());
+        expect($validation->getResults()[0]->getDomain())->toEqual('example.com');
+        expect($validation->getResults()[0]->getSelector())->toEqual('phpmailer');
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -370,7 +369,7 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -399,7 +398,7 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -456,7 +455,7 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -485,8 +484,8 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
-        assertNotEmpty($validation->getResults()[0]->getWarnings());
+        expect($validation->isValid())->toBeFalse();
+        expect($validation->getResults()[0]->getWarnings())->not->toBeEmpty();
     }
 );
 
@@ -514,8 +513,8 @@ it(
 
         $validator = new Validator(new Message($message));
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
-        assertEmpty($validation->getResults()[0]->getWarnings());
+        expect($validation->isValid())->toBeFalse();
+        expect($validation->getResults()[0]->getWarnings())->toBeEmpty();
     }
 );
 
@@ -543,7 +542,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
     }
 );
 
@@ -571,7 +570,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
         throw new ValidatorException();
     }
 )->throws(ValidatorException::class);
@@ -601,7 +600,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
     }
 );
 
@@ -630,7 +629,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
     }
 );
 
@@ -659,7 +658,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
     }
 );
 
@@ -688,7 +687,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
     }
 );
 
@@ -717,7 +716,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
     }
 );
 
@@ -746,7 +745,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
     }
 );
 
@@ -775,7 +774,7 @@ it(
 
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
-        assertFalse($validation->isValid());
+        expect($validation->isValid())->toBeFalse();
     }
 );
 
@@ -784,7 +783,7 @@ it(
     function () {
         $validator = new Validator(new Message("test:test\r\n\r\n"), new TestingResolver());
         $body = $validator->canonicalizeBody();
-        assertEquals(Validator::CRLF, $body);
+        expect($body)->toEqual(Validator::CRLF);
     }
 );
 
@@ -801,8 +800,8 @@ it(
     function () {
         $validator = new Validator(new Message("test:test\r\n\r\ntest"), new TestingResolver());
         $keys = $validator->fetchPublicKeys('example.com', 'trailingsemi');
-        assertCount(1, $keys);
-        assertCount(3, $keys[0]);
+        expect($keys)->toHaveCount(1);
+        expect($keys[0])->toHaveCount(3);
     }
 );
 
@@ -862,7 +861,7 @@ it(
     'skips unnamed DKIM tags',
     function () {
         $tags = Validator::extractDKIMTags(new Header('DKIM-Signature: s=phpmailer; =true'));
-        assertEquals(['s' => 'phpmailer'], $tags);
+        expect($tags)->toEqual(['s' => 'phpmailer']);
     }
 );
 
@@ -870,7 +869,7 @@ it(
     'skips trailing semi-colon in DKIM tags',
     function () {
         $tags = Validator::extractDKIMTags(new Header('DKIM-Signature: s=phpmailer; x=true;'));
-        assertEquals(['s' => 'phpmailer', 'x' => 'true'], $tags);
+        expect($tags)->toEqual(['s' => 'phpmailer', 'x' => 'true']);
     }
 );
 
@@ -884,8 +883,8 @@ it(
         //Create a signature (by reference) using the private key
         $signedok = openssl_sign($text, $signature, $private, Validator::DEFAULT_HASH_FUNCTION);
 
-        assertTrue($signedok);
-        assertNotEmpty($signature);
+        expect($signedok)->toBeTrue();
+        expect($signature)->not->toBeEmpty();
 
         //Create a placeholder instance so we can use its signature validator
         $validator = new Validator(new Message("test:test\r\n\r\ntest"), new TestingResolver());
@@ -897,6 +896,6 @@ it(
         );
 
         //Check that the signature matches
-        assertTrue($isValid);
+        expect($isValid)->toBeTrue();
     }
 );
