@@ -50,7 +50,7 @@ class Header
         $currentHeaderValue = '';
         $matches = [];
         foreach ($headerLines as $headerLine) {
-            if (preg_match('/^([^ \t]*?)[ \t]*(?::[ \t]*)(.*)$/', $headerLine, $matches)) {
+            if (preg_match('/^([^ \t]+?)[ \t]*(?::[ \t]*)(.*)$/', $headerLine, $matches)) {
                 //This line does not start with FWS, so it's the start of a new header
                 $currentHeaderLabel = $matches[1];
                 $currentHeaderValue = $matches[2] . self::CRLF;
