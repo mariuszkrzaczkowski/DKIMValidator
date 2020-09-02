@@ -624,11 +624,11 @@ class Validator
         $dkimTags = [];
         //DKIM-Signature headers ignore all internal spaces, which may have been added by folding
         $tagParts = explode(';', $header->getValueWithoutSpaces());
-        //Drop an empty last element caused by a (valid) trailing semi-colon
-        if (end($tagParts) === '') {
-            array_pop($tagParts);
-        }
         foreach ($tagParts as $tagIndex => $tagContent) {
+            if (trim($tagContent) === '') {
+                //Ignore any extra or trailing ; separators resulting in empty tags
+                continue;
+            }
             [$tagName, $tagValue] = explode('=', trim($tagContent), 2);
             if ($tagName === '') {
                 continue;

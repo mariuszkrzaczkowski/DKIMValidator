@@ -59,9 +59,9 @@ it(
         $header = new Header(
         //These line breaks *must* be CRLF, so make them explicit
             "DKIM-Signature: v=1; d=example.com; s=phpmailer;\r\n" .
-            " a=rsa-sha256; q=dns/txt; l=6; t=1570645905; c=relaxed/simple;\r\n" .
+            " a=rsa-sha256; q=dns/txt; l=6; t=1570645905;; ; c=relaxed/simple;\r\n" . //Extra ;
             " h=Date:To:From:Subject:Message-ID:X-Mailer:Content-Type;\r\n" .
-            " bh=g3zLYH4xKxcPrHOD18z9YfpQcnk/GaJedfustWU5uGs=;\r\n" .
+            " bh=g3zLYH4xKxcPrHOD18z9YfpQcnk/GaJedfustWU5uGs=; xx=; =yy;\r\n" . //Extra unknown, empty and unnamed tags
             " b=ljWj1co9L6sMrXJ1yBwJ771dnjvVKZN3i97Q/QB0lGQf43FPdautceMsiu3M132QopX63Osqp\r\n" .
             " T1Oz40T9EMONwzCpzIMKKB/tNjDe5qw+evPjf/5mAaiVpIevh1P377t/K0y0nRmCaPbfa0sbm\r\n" .
             " eoFMSapHqTbf2phVJOCo7ejp3laovXSOhQoLZQrnCCW8LnqibtSoAO24ryr+B045XyBIcGPQk\r\n" .
@@ -69,6 +69,7 @@ it(
             " Rh7Z0ZEl+n4fqoyrTctR8ZEimwwd+xFOtx1hB9KgjW+JVcdTVQ=="
         );
         $tags = Validator::extractDKIMTags($header);
+        expect($tags)->toHaveCount(12);
         expect($tags['a'])->toEqual('rsa-sha256');
         expect($tags['b'])->toEqual(
             'ljWj1co9L6sMrXJ1yBwJ771dnjvVKZN3i97Q/QB0lGQf43FPdautceMsiu3M132QopX63Osqp' .
@@ -86,6 +87,7 @@ it(
         expect($tags['s'])->toEqual('phpmailer');
         expect($tags['t'])->toEqual('1570645905');
         expect($tags['v'])->toEqual('1');
+        expect($tags['xx'])->toEqual('');
     }
 );
 
