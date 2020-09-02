@@ -25,3 +25,19 @@ it(
         $message = new Header('');
     }
 )->throws(InvalidArgumentException::class);
+
+/**
+ * This was a real bug that appeared in OpenDKIM
+ * @see https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=840015
+ */
+it(
+    'correctly canonicalizes headers with early folds',
+    function () {
+        $header = new Header(
+            "Subject:\r\n    long subject text continued on subsequent lines ...\r\n"
+        );
+        expect($header->getRelaxedCanonicalizedHeader())->toEqual(
+            "subject:long subject text continued on subsequent lines ...\r\n"
+        );
+    }
+);
