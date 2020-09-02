@@ -132,7 +132,27 @@ class Header
         $val = trim((string) preg_replace('/\s+/', self::FWS, $this->getValue()), " \r\n\t");
 
         //Stick it back together including a trailing break, note no space before or after the `:`
-        return "${label}:${val}" . self::CRLF;
+        $completeHeader = "${label}:${val}" . self::CRLF;
+
+        //If this is a DKIM signature, we need to remove the `b` tag value
+        //The `b` tag will usually be the last tag in the signature, so it may be terminated by
+        //a ; or a line break (which we just added above)
+        if ($this->isDKIMSignature()) {
+            $completeHeader = preg_replace('/ b=([^;\r\n]*)/', ' b=', $completeHeader);
+        }
+        return $completeHeader;
+    }
+
+    /**
+     * Is this header a DKIM signature?
+     *
+     * @return bool
+     */
+    public function isDKIMSignature(): bool
+    {
+        //If you want to support other DKIM implementations, override this method and add them like this
+        // return in_array($this->getLowerLabel(), ['dkim-signature', 'x-google-dkim-signature'])
+        return $this->getLowerLabel() === 'dkim-signature';
     }
 
     /**
@@ -168,7 +188,13 @@ class Header
      */
     public function getSimpleCanonicalizedHeader(): string
     {
-        return $this->getRaw();
+        $completeHeader = $this->getRaw();
+
+        //If this is a DKIM signature, we need to remove the `b` tag value
+        if ($this->isDKIMSignature()) {
+            $completeHeader = preg_replace('/ b=([^;]*)/s', ' b=', $completeHeader);
+        }
+        return $completeHeader;
     }
 
     /**

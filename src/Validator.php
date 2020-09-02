@@ -85,17 +85,6 @@ class Validator
     }
 
     /**
-     * Get all DKIM signature headers.
-     *
-     * @return Header[]
-     * @throws HeaderException
-     */
-    protected function getDKIMHeaders(): array
-    {
-        return $this->message->getHeadersNamed('dkim-signature');
-    }
-
-    /**
      * Validation wrapper - return boolean true/false about validation success/failure
      *
      * @return bool
@@ -126,7 +115,7 @@ class Validator
         $validationResults = new ValidationResults();
 
         //Find all DKIM signatures amongst the headers (there may be more than one)
-        $signatures = $this->getDKIMHeaders();
+        $signatures = $this->message->getDKIMHeaders();
 
         if (empty($signatures)) {
             $validationResult = new ValidationResult();
@@ -628,7 +617,7 @@ class Validator
      */
     public static function extractDKIMTags(Header $header): array
     {
-        if ($header->getLowerLabel() !== 'dkim-signature') {
+        if (!$header->isDKIMSignature()) {
             throw new \InvalidArgumentException('Attempted to extract DKIM tags from a non-DKIM header');
         }
         $dkimTags = [];

@@ -140,6 +140,24 @@ class Message
     }
 
     /**
+     * Get all DKIM signature headers.
+     *
+     * @return Header[]
+     * @throws HeaderException
+     */
+    public function getDKIMHeaders(): array
+    {
+        $matchedHeaders = [];
+        foreach ($this->getHeaders() as $header) {
+            if ($header->isDKIMSignature()) {
+                $matchedHeaders[] = $header;
+            }
+        }
+
+        return $matchedHeaders;
+    }
+
+    /**
      * Return the message body.
      *
      * @return string
