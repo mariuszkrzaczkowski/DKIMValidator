@@ -58,12 +58,12 @@ it(
             "  yydzSy5cypx21c1V45oXHhAYx1mVvFQXb24CNPlBXyoJMJ+tOvYIbhqfFzYA7UEfmpPZ\r\n" .
             "  3PGg==\r\n"
         );
-        expect($header->getRelaxedCanonicalizedHeader())->toEqual(
+        expect($header->getRelaxedCanonicalizedHeader(true))->toEqual(
             "dkim-signature:v=1; a=rsa-sha256; c=relaxed/relaxed; d=example.com; s=20161025;" .
             " h=from:content-transfer-encoding:mime-version:subject:message-id:date :to;" .
             " bh=g3zLYH4xKxcPrHOD18z9YfpQcnk/GaJedfustWU5uGs=; b=\r\n"
         );
-        expect($header->getSimpleCanonicalizedHeader())->toEqual(
+        expect($header->getSimpleCanonicalizedHeader(true))->toEqual(
             "DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n" .
             " d=example.com; s=20161025;\r\n" .
             " h=from:content-transfer-encoding:mime-version:subject:message-id:date\r\n" .

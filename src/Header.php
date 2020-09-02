@@ -121,9 +121,11 @@ class Header
      *
      * @see https://tools.ietf.org/html/rfc6376#section-3.4.2
      *
+     * @param bool $stripBvalue Whether to strip the b tag value from this header if it's a DKIM signature
+     *
      * @return string
      */
-    public function getRelaxedCanonicalizedHeader(): string
+    public function getRelaxedCanonicalizedHeader($stripBvalue = false): string
     {
         //Lowercase and trim header label
         $label = trim($this->getLowerLabel());
@@ -134,10 +136,10 @@ class Header
         //Stick it back together including a trailing break, note no space before or after the `:`
         $completeHeader = "${label}:${val}" . self::CRLF;
 
-        //If this is a DKIM signature, we need to remove the `b` tag value
+        //If this is a DKIM signature and we are canonicalizing for it, we need to remove the `b` tag value
         //The `b` tag will usually be the last tag in the signature, so it may be terminated by
         //a ; or a line break (which we just added above)
-        if ($this->isDKIMSignature()) {
+        if ($stripBvalue && $this->isDKIMSignature()) {
             $completeHeader = preg_replace('/ b=([^;\r\n]*)/', ' b=', $completeHeader);
         }
         return $completeHeader;
@@ -186,12 +188,12 @@ class Header
      *
      * @return string
      */
-    public function getSimpleCanonicalizedHeader(): string
+    public function getSimpleCanonicalizedHeader($stripBvalue = false): string
     {
         $completeHeader = $this->getRaw();
 
-        //If this is a DKIM signature, we need to remove the `b` tag value
-        if ($this->isDKIMSignature()) {
+        //If this is a DKIM signature and we are canonicalizing for it, we need to remove the `b` tag value
+        if ($stripBvalue && $this->isDKIMSignature()) {
             $completeHeader = preg_replace('/ b=([^;]*)/s', ' b=', $completeHeader);
         }
         return $completeHeader;

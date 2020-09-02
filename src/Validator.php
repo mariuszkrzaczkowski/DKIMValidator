@@ -124,6 +124,7 @@ class Validator
             return $validationResults;
         }
         //Validate each signature in turn
+        $sigIndex = 0;
         foreach ($signatures as $signatureIndex => $signature) {
             $validationResult = new ValidationResult();
             try {
@@ -288,8 +289,8 @@ class Validator
                     throw new ValidatorException("Signature algorithm ${hash} is not available in" . ' openssl');
                 }
 
-                //Canonicalize the headers
-                $canonicalHeaders = $this->canonicalizeHeaders($headersToCanonicalize, $headerCA);
+                //Canonicalize the headers for this signature
+                $canonicalHeaders = $this->canonicalizeHeaders($headersToCanonicalize, $headerCA, $sigIndex);
 
                 //Calculate the body hash
                 $bodyHash = self::hashBody($canonicalBody, $hash);
@@ -370,6 +371,7 @@ class Validator
                 $validationResult->addFail($e->getMessage());
             }
             $validationResults->addResult($validationResult);
+            ++$sigIndex;
         }
 
         return $validationResults;
@@ -513,31 +515,37 @@ class Validator
      * @param Header[] $headers
      * @param string $algorithm 'relaxed' or 'simple'
      *
+     * @param int $forSignature the index of the DKIM signature to canonicalize for
+     *
      * @return string
      *
      * @throws DKIMException
      */
     public function canonicalizeHeaders(
         array $headers,
-        string $algorithm = self::CANONICALIZATION_HEADERS_RELAXED
+        string $algorithm = self::CANONICALIZATION_HEADERS_RELAXED,
+        int $forSignature = 0
     ): string {
         if (count($headers) === 0) {
             throw new DKIMException('Attempted to canonicalize empty header array');
         }
 
         $canonical = '';
-        switch ($algorithm) {
-            case self::CANONICALIZATION_HEADERS_SIMPLE:
-                foreach ($headers as $header) {
-                    $canonical .= $header->getSimpleCanonicalizedHeader();
+        $sigIndex = 0;
+        foreach ($headers as $header) {
+            $stripBvalue = false;
+            if ($header->isDKIMSignature()) {
+                if ($forSignature === $sigIndex) {
+                    //This is the signature we are canonicalizing for, so we need to remove its b tag value
+                    $stripBvalue = true;
                 }
-                break;
-            case self::CANONICALIZATION_HEADERS_RELAXED:
-            default:
-                foreach ($headers as $header) {
-                    $canonical .= $header->getRelaxedCanonicalizedHeader();
-                }
-                break;
+                ++$sigIndex;
+            }
+            if ($algorithm === self::CANONICALIZATION_HEADERS_SIMPLE) {
+                $canonical .= $header->getSimpleCanonicalizedHeader($stripBvalue);
+            } elseif ($algorithm === self::CANONICALIZATION_HEADERS_RELAXED) {
+                $canonical .= $header->getRelaxedCanonicalizedHeader($stripBvalue);
+            }
         }
 
         return $canonical;
