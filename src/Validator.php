@@ -260,7 +260,8 @@ class Validator
                         $headersToCanonicalize[] = $header;
                     }
                 }
-                //Need to remove the `b` value from the signature header before checking the hash
+                //A DKIM signature needs to be included in the verification, but it won't appear in the `h` tag
+                //, and Need to remove the `b` value from the signature header before checking the hash
                 $headersToCanonicalize[] = new Header(
                     'DKIM-Signature: ' .
                     preg_replace('/b=(.*?)(;|$)/s', 'b=$2', $signature->getValue())
