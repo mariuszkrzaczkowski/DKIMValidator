@@ -390,10 +390,6 @@ class Validator
         string $algorithm = self::CANONICALIZATION_BODY_RELAXED,
         int $length = 0
     ): string {
-        if ($this->message->getBody() === '') {
-            return self::CRLF;
-        }
-
         //Convert CRLF to LF breaks for convenience
         $canonicalBody = str_replace(self::CRLF, self::LF, $this->message->getBody());
         if ($algorithm === self::CANONICALIZATION_BODY_RELAXED) {
@@ -410,8 +406,11 @@ class Validator
         //Convert line breaks back to CRLF
         $canonicalBody = str_replace(self::LF, self::CRLF, (string)$canonicalBody);
 
-        //Add last trailing CRLF
-        $canonicalBody .= self::CRLF;
+        //If the body is non-empty but does not end with a CRLF, add a CRLF
+        //https://tools.ietf.org/html/rfc6376#section-3.4.4 (b)
+        if (!empty($canonicalBody) && substr($canonicalBody, -2) !== self::CRLF) {
+            $canonicalBody .= self::CRLF;
+        }
 
         //If we've been asked for a substring, return that, otherwise return the whole body
         return $length > 0 ? substr($canonicalBody, 0, $length) : $canonicalBody;

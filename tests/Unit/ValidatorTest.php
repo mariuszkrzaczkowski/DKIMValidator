@@ -43,6 +43,24 @@ it(
 );
 
 it(
+    'canonicalizes an empty body correctly',
+    function () {
+        $validator = new Validator(new Message("test:test\r\n\r\n"));
+        $body = $validator->canonicalizeBody(Validator::CANONICALIZATION_BODY_RELAXED);
+        expect($body)->toEqual('');
+    }
+);
+
+it(
+    'ensures a canonicalized body ends with CRLF',
+    function () {
+        $validator = new Validator(new Message("test:test\r\n\r\ntest"));
+        $body = $validator->canonicalizeBody(Validator::CANONICALIZATION_BODY_RELAXED);
+        expect($body)->toEqual("test\r\n");
+    }
+);
+
+it(
     'rejects a message with no DKIM signatures',
     function () {
         //Examples from https://tools.ietf.org/html/rfc6376#section-3.4.5
@@ -790,15 +808,6 @@ it(
         $validator = new Validator(new Message($message), new TestingResolver());
         $validation = $validator->validate();
         expect($validation->isValid())->toBeFalse();
-    }
-);
-
-it(
-    'canonicalizes an empty body correctly',
-    function () {
-        $validator = new Validator(new Message("test:test\r\n\r\n"), new TestingResolver());
-        $body = $validator->canonicalizeBody();
-        expect($body)->toEqual(Validator::CRLF);
     }
 );
 
