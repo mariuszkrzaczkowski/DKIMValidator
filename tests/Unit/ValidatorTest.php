@@ -20,19 +20,19 @@ it(
         $relaxedBody = " C\r\nD E\r\n";
         $simpleHeader = "A: X\r\nB : Y\t\r\n\tZ  \r\n";
         $simpleBody = " C \r\nD \t E\r\n";
-        $m = new Validator(new Message($rawMessage));
-        $rh = $m->canonicalizeHeaders(
-            $m->getMessage()->getHeaders(),
+        $validator = new Validator(new Message($rawMessage));
+        $rh = $validator->canonicalizeHeaders(
+            $validator->getMessage()->getHeaders(),
             Validator::CANONICALIZATION_HEADERS_RELAXED
         );
-        $rb = $m->canonicalizeBody(
+        $rb = $validator->canonicalizeBody(
             Validator::CANONICALIZATION_BODY_RELAXED
         );
-        $sh = $m->canonicalizeHeaders(
-            $m->getMessage()->getHeaders(),
+        $sh = $validator->canonicalizeHeaders(
+            $validator->getMessage()->getHeaders(),
             Validator::CANONICALIZATION_HEADERS_SIMPLE
         );
-        $sb = $m->canonicalizeBody(
+        $sb = $validator->canonicalizeBody(
             Validator::CANONICALIZATION_BODY_SIMPLE
         );
         expect($rh)->toEqual($relaxedHeader);
