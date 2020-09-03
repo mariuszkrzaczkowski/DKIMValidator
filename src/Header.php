@@ -125,7 +125,7 @@ class Header
      *
      * @return string
      */
-    public function getRelaxedCanonicalizedHeader($stripBvalue = false): string
+    public function getRelaxedCanonicalizedHeader(bool $stripBvalue = false): string
     {
         //Lowercase and trim header label
         $label = trim($this->getLowerLabel());
@@ -186,9 +186,11 @@ class Header
      *
      * @see https://tools.ietf.org/html/rfc6376#section-3.4.1
      *
+     * @param bool $stripBvalue Whether to strip the b tag value from this header if it's a DKIM signature
+     *
      * @return string
      */
-    public function getSimpleCanonicalizedHeader($stripBvalue = false): string
+    public function getSimpleCanonicalizedHeader(bool $stripBvalue = false): string
     {
         $completeHeader = $this->getRaw();
 
