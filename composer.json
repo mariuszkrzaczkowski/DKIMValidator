@@ -16,6 +16,16 @@
       "email": "phpmailer@synchromedia.co.uk"
     }
   ],
+  "funding": [
+    {
+      "url": "https://github.com/Synchro",
+      "type": "github"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/PHPMailer/DKIMValidator/issues",
+    "source": "https://github.com/PHPMailer/DKIMValidator"
+  },
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
