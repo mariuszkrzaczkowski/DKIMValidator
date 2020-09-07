@@ -41,7 +41,7 @@ jobs:
         if: "matrix.php >= 8"
 
       - name: Pest Unit Tests
-        run: vendor/bin/pest --colors=always --exclude-group=integration
+        run: vendor/bin/pest --colors=always
 
       - name: PHPStan Type Checks
         run: vendor/bin/phpstan analyse --ansi
