@@ -15,7 +15,6 @@ jobs:
     name: Tests P${{ matrix.php }} - ${{ matrix.os }} - ${{ matrix.dependency-version }}
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v2
 
@@ -30,7 +29,16 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           extensions: mbstring, hash, openssl
+          tools: composer:v2
           coverage: pcov
+
+      - name: Install PHP 7 dependencies
+        run: composer update --${{ matrix.dependency-version }} --no-interaction --no-progress
+        if: "matrix.php < 8"
+
+      - name: Install PHP 8 dependencies
+        run: composer update --${{ matrix.dependency-version }} --ignore-platform-req=php --no-interaction --no-progress
+        if: "matrix.php >= 8"
 
       - name: Install Composer dependencies
         run: composer update --${{ matrix.dependency-version }} --no-interaction --prefer-dist
