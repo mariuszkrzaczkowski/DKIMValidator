@@ -40,9 +40,6 @@ jobs:
         run: composer update --${{ matrix.dependency-version }} --ignore-platform-req=php --no-interaction --no-progress
         if: "matrix.php >= 8"
 
-      - name: Install Composer dependencies
-        run: composer update --${{ matrix.dependency-version }} --no-interaction --prefer-dist
-
       - name: Pest Unit Tests
         run: vendor/bin/pest --colors=always --exclude-group=integration
 
