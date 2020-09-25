@@ -49,7 +49,7 @@ class Validator extends DKIM
             //Strip all internal spaces
             $signatureToProcess = preg_replace('/\s+/', '', $signature);
             //Split into tags
-            $dkimTags = explode(';', $signatureToProcess);
+            $dkimTags = explode(';', rtrim($signatureToProcess, ';'));
             //Drop an empty last element caused by a trailing semi-colon
             if (end($dkimTags) === '') {
                 array_pop($dkimTags);
