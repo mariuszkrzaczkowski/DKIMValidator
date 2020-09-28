@@ -20,8 +20,8 @@ require 'vendor/autoload.php';
 //Load the message directly from disk -
 //don't copy & paste it as that will likely affect line breaks & charsets
 $message  = file_get_contents('message.eml');
-$dkimValidator = new Validator($message);
 try {
+    $dkimValidator = new Validator($message);
     if ($dkimValidator->validateBoolean()) {
         echo "Cool, it's valid";
     } else {
